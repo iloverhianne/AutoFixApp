@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFF</color>
+    
+    <!-- Kei Cars Vibe Palette -->
+    <color name="deep_dark">#080C14</color>
+    <color name="surface_dark">#111827</color>
+    <color name="card_dark">#1F2937</color>
+    
+    <!-- Brand Colors -->
+    <color name="primary_brand">#10B981</color> <!-- The Green from screenshot -->
+    <color name="accent_cyan">#06B6D4</color>
+    
+    <!-- Text Colors -->
+    <color name="text_high">#F9FAFB</color>
+    <color name="text_mid">#9CA3AF</color>
+    <color name="text_low">#6B7280</color>
+    
+    <!-- System -->
+    <color name="error_red">#EF4444</color>
+    <color name="glass_white">#0DFFFFFF</color>
+    <color name="glass_border">#1AFFFFFF</color>
+    
+    <color name="gradient_start">#10B981</color>
+    <color name="gradient_end">#059669</color>
+    <color name="primary_soft">#34D399</color>
+    <color name="warning_orange">#F59E0B</color>
+
+    <!-- Compatibility Aliases -->
+    <color name="primary">@color/primary_brand</color>
+    <color name="vibrant_purple">@color/primary_brand</color>
+    <color name="accent">@color/accent_cyan</color>
+    <color name="surface">@color/surface_dark</color>
+    <color name="input_dark">@color/card_dark</color>
+    <color name="text_hint">@color/text_low</color>
+    <color name="background">@color/deep_dark</color>
+    <color name="text_main">@color/text_high</color>
+    <color name="text_secondary">@color/text_mid</color>
+</resources>
