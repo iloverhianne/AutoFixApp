@@ -1,69 +1,71 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:paddingVertical="8dp">
+    android:padding="8dp">
 
+    <!-- Timeline Indicator Left -->
     <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:gravity="center_horizontal"
-        android:orientation="vertical">
+        android:layout_width="40dp"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
 
         <View
-            android:id="@+id/lineTop"
             android:layout_width="2dp"
-            android:layout_height="16dp"
-            android:background="@color/vibrant_purple" />
+            android:layout_height="10dp"
+            android:background="@color/border" />
 
-        <ImageView
-            android:id="@+id/ivDot"
+        <View
             android:layout_width="12dp"
             android:layout_height="12dp"
-            android:src="@drawable/card_bg"
-            app:tint="@color/vibrant_purple" />
+            android:background="@drawable/bg_circle_blue" /> <!-- Background drawable, I'll use simple circular shape or just a simple view -->
 
         <View
-            android:id="@+id/lineBottom"
             android:layout_width="2dp"
-            android:layout_height="40dp"
-            android:background="@color/vibrant_purple" />
+            android:layout_height="match_parent"
+            android:background="@color/border" />
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
         android:orientation="vertical"
-        android:paddingBottom="16dp">
+        android:padding="8dp"
+        android:background="@drawable/card_bg"
+        android:layout_marginStart="8dp"
+        android:elevation="2dp"
+        android:layout_marginEnd="4dp"
+        android:layout_marginBottom="8dp">
 
         <TextView
             android:id="@+id/tvTimelineStatus"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Vehicle Received"
-            android:textColor="@color/white"
-            android:textSize="16sp"
-            android:textStyle="bold" />
+            android:text="In Progress"
+            android:textStyle="bold"
+            android:textColor="@color/text_main"
+            android:textSize="16sp" />
 
         <TextView
             android:id="@+id/tvTimelineDate"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Jan 15, 2024 - 10:30 AM"
+            android:text="2023-11-01 10:00 AM"
             android:textColor="@color/text_hint"
-            android:textSize="12sp" />
+            android:textSize="12sp"
+            android:layout_marginTop="2dp" />
 
         <TextView
             android:id="@+id/tvTimelineRemarks"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:text="Mechanic note: Replacing parts."
+            android:textColor="@color/text_main"
             android:layout_marginTop="4dp"
-            android:text="Initial inspection done. Proceeding to dismantling."
-            android:textColor="@color/text_hint"
             android:textSize="14sp" />
+
     </LinearLayout>
 
 </LinearLayout>

@@ -14,54 +14,202 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
         android:layout_marginTop="10dp"
-        android:text="Track My Vehicle"
+        android:text="Track Repair Progress"
         android:textColor="@color/text_main"
         android:textSize="26sp"
         android:textStyle="bold" />
 
-    <androidx.cardview.widget.CardView
-        android:id="@+id/cardTracking"
+    <!-- Search Section -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
+        android:orientation="horizontal"
         android:layout_marginHorizontal="20dp"
-        app:cardBackgroundColor="@color/surface"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="0dp">
+        android:layout_marginTop="16dp">
+
+        <EditText
+            android:id="@+id/etJobId"
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:layout_weight="1"
+            android:background="@drawable/edit_text_bg"
+            android:hint="Enter Job ID (e.g., 1001)"
+            android:inputType="number"
+            android:paddingHorizontal="16dp"
+            android:textColor="@color/text_main"
+            android:textColorHint="@color/text_hint" />
+
+        <Button
+            android:id="@+id/btnTrackRepair"
+            android:layout_width="wrap_content"
+            android:layout_height="50dp"
+            android:layout_marginStart="8dp"
+            android:backgroundTint="@color/primary"
+            android:text="TRACK"
+            android:textColor="@android:color/white"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="16dp"
+        android:fillViewport="true">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center"
             android:orientation="vertical"
-            android:padding="40dp">
+            android:paddingBottom="20dp">
 
-            <ImageView
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:src="@android:drawable/ic_menu_search"
-                app:tint="@color/text_hint" />
+            <!-- Empty State -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cardEmptyState"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                app:cardBackgroundColor="@color/surface"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp">
 
-            <TextView
-                android:id="@+id/tvTrackingStatus"
-                android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="40dp">
+
+                    <ImageView
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
+                        android:src="@android:drawable/ic_menu_search"
+                        app:tint="@color/text_hint" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="Enter a Job ID to track"
+                        android:textAlignment="center"
+                        android:textColor="@color/text_hint"
+                        android:textSize="16sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="When your car starts repair, you'll see live updates here."
+                        android:textAlignment="center"
+                        android:textColor="@color/text_hint"
+                        android:textSize="12sp" />
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Tracking Details (Hidden initially) -->
+            <LinearLayout
+                android:id="@+id/layoutTrackingDetails"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="No vehicle currently in service"
-                android:textAlignment="center"
-                android:textColor="@color/text_hint"
-                android:textSize="16sp" />
-                
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="When your car starts repair, you'll see live updates here."
-                android:textAlignment="center"
-                android:textColor="@color/text_hint"
-                android:textSize="12sp" />
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <!-- Job Info Card -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="20dp"
+                    app:cardBackgroundColor="@color/surface"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="2dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <TextView
+                            android:id="@+id/tvTrackVehicle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Vehicle: ABC-1234 (Toyota Vios)"
+                            android:textColor="@color/text_main"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Current Status:"
+                                android:textColor="@color/text_hint" />
+
+                            <TextView
+                                android:id="@+id/tvTrackStatus"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/edit_text_bg"
+                                android:paddingHorizontal="12dp"
+                                android:paddingVertical="4dp"
+                                android:text="IN PROGRESS"
+                                android:textColor="@color/primary"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Est. Total:"
+                                android:textColor="@color/text_hint" />
+
+                            <TextView
+                                android:id="@+id/tvTrackTotal"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="₱1,500.00"
+                                android:textColor="@color/text_main"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- Timeline Logs -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginBottom="8dp"
+                    android:text="Progress Timeline"
+                    android:textColor="@color/text_main"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvTimeline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="20dp"
+                    android:nestedScrollingEnabled="false" />
+
+            </LinearLayout>
 
         </LinearLayout>
-    </androidx.cardview.widget.CardView>
+    </ScrollView>
 
 </LinearLayout>

@@ -21,8 +21,18 @@ class HomeActivity : AppCompatActivity() {
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
         
         // Default fragment
-        loadFragment(HomeFragment())
+        val navigateTo = intent.getStringExtra("NAVIGATE_TO")
+        if (navigateTo == "track") {
+            bottomNav.selectedItemId = R.id.nav_track
+            loadFragment(TrackingFragment())
+        } else {
+            loadFragment(HomeFragment())
+        }
 
+        setupBottomNavListener(bottomNav)
+    }
+
+    private fun setupBottomNavListener(bottomNav: BottomNavigationView) {
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_home -> loadFragment(HomeFragment())
@@ -32,6 +42,20 @@ class HomeActivity : AppCompatActivity() {
             }
             true
         }
+    }
+
+    fun navigateToTracking(jobId: String) {
+        val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
+        bottomNav.setOnItemSelectedListener(null)
+        bottomNav.selectedItemId = R.id.nav_track
+        
+        val fragment = TrackingFragment()
+        val bundle = Bundle()
+        bundle.putString("JOB_ID", jobId)
+        fragment.arguments = bundle
+        
+        loadFragment(fragment)
+        setupBottomNavListener(bottomNav)
     }
 
     private fun loadFragment(fragment: Fragment) {
@@ -254,50 +278,111 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
             val time = spinnerTime.selectedItem?.toString() ?: "08:00:00"
             val customerId = sessionManager.getCustomerId() ?: ""
             val mechId = if (mechanicsList.isNotEmpty()) mechanicsList[spinnerAssignment.selectedItemPosition].mechanic_id else null
+            val mechName = if (mechanicsList.isNotEmpty()) mechanicsList[spinnerAssignment.selectedItemPosition].full_name else null
+            val serviceName = servicesList.find { it.service_id == selectedServiceId }?.service_name
 
             if (date.isEmpty()) {
                 Toast.makeText(context, "Please select a date", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            apiService.bookAppointment(
-                tenantId = tid,
-                customerId = customerId,
-                serviceId = selectedServiceId ?: "",
-                date = date,
-                time = time,
-                estimate = selectedEstimate,
-                mechanicId = mechId
-            ).enqueue(object : Callback<BaseResponse> {
-                override fun onResponse(call: Call<BaseResponse>, response: Response<BaseResponse>) {
-                    if (response.isSuccessful && response.body()?.status == "success") {
-                        Toast.makeText(context, "Booking successful!", Toast.LENGTH_LONG).show()
-                        // Redirect to Tracking or Refresh
-                        activity?.findViewById<BottomNavigationView>(R.id.bottom_navigation)?.selectedItemId = R.id.nav_track
-                    } else {
-                        Toast.makeText(context, "Booking failed: ${response.body()?.message}", Toast.LENGTH_SHORT).show()
-                    }
-                }
-                override fun onFailure(call: Call<BaseResponse>, t: Throwable) {
-                    Toast.makeText(context, "Error connecting to server", Toast.LENGTH_SHORT).show()
-                }
-            })
+            val intent = android.content.Intent(context, BookingConfirmationActivity::class.java).apply {
+                putExtra("serviceId", selectedServiceId ?: "")
+                putExtra("serviceName", serviceName ?: "Standard Service")
+                putExtra("date", date)
+                putExtra("time", time)
+                putExtra("estimate", selectedEstimate)
+                if (mechId != null) putExtra("mechanicId", mechId)
+                if (mechName != null) putExtra("mechanicName", mechName)
+            }
+            startActivity(intent)
         }
     }
 }
 
 class TrackingFragment : Fragment(R.layout.fragment_tracking) {
+    private lateinit var apiService: ApiService
+    private lateinit var sessionManager: SessionManager
+    private lateinit var adapter: TimelineAdapter
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val sessionManager = SessionManager(requireContext())
+        val context = requireContext()
+        sessionManager = SessionManager(context)
+        apiService = RetrofitClient.getApiService(context)
+        
         view.findViewById<TextView>(R.id.tvShopNameHeader)?.text = sessionManager.getShopName() ?: "AutoFix Shop"
+
+        val etJobId = view.findViewById<EditText>(R.id.etJobId)
+        val btnTrackRepair = view.findViewById<Button>(R.id.btnTrackRepair)
+        
+        val cardEmptyState = view.findViewById<View>(R.id.cardEmptyState)
+        val layoutTrackingDetails = view.findViewById<View>(R.id.layoutTrackingDetails)
+        
+        val tvTrackVehicle = view.findViewById<TextView>(R.id.tvTrackVehicle)
+        val tvTrackStatus = view.findViewById<TextView>(R.id.tvTrackStatus)
+        val tvTrackTotal = view.findViewById<TextView>(R.id.tvTrackTotal)
+        val rvTimeline = view.findViewById<RecyclerView>(R.id.rvTimeline)
+
+        rvTimeline.layoutManager = LinearLayoutManager(context)
+        adapter = TimelineAdapter(emptyList())
+        rvTimeline.adapter = adapter
+
+        btnTrackRepair.setOnClickListener {
+            val jobId = etJobId.text.toString().trim()
+            if (jobId.isEmpty()) {
+                Toast.makeText(context, "Please enter a Job ID", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val tid = sessionManager.getTenantId() ?: "1"
+            val customerId = sessionManager.getCustomerId() ?: ""
+
+            apiService.trackRepair(tenantId = tid, jobId = jobId, customerId = customerId)
+                .enqueue(object : Callback<TrackingResponse> {
+                    override fun onResponse(call: Call<TrackingResponse>, response: Response<TrackingResponse>) {
+                        if (response.isSuccessful && response.body()?.status == "success") {
+                            val body = response.body()!!
+                            
+                            // Hide Empty state, show details
+                            cardEmptyState.visibility = View.GONE
+                            layoutTrackingDetails.visibility = View.VISIBLE
+
+                            // Populate Job Info
+                            val info = body.jobInfo
+                            tvTrackVehicle.text = "Vehicle: ${info.plate_no} (${info.make} ${info.model})"
+                            tvTrackStatus.text = info.status.uppercase()
+                            tvTrackTotal.text = "₱${info.total_amount}"
+
+                            // Populate Timeline
+                            adapter.updateData(body.timeline)
+                            
+                        } else {
+                            Toast.makeText(context, "Job completely not found or no permission", Toast.LENGTH_SHORT).show()
+                            cardEmptyState.visibility = View.VISIBLE
+                            layoutTrackingDetails.visibility = View.GONE
+                        }
+                    }
+
+                    override fun onFailure(call: Call<TrackingResponse>, t: Throwable) {
+                        Toast.makeText(context, "Network error", Toast.LENGTH_SHORT).show()
+                    }
+                })
+        }
+
+        val presetJobId = arguments?.getString("JOB_ID")
+        if (!presetJobId.isNullOrEmpty()) {
+            etJobId.setText(presetJobId)
+            btnTrackRepair.performClick()
+        }
     }
 }
 
 class HistoryFragment : Fragment(R.layout.fragment_history) {
     private lateinit var apiService: ApiService
     private lateinit var sessionManager: SessionManager
-    private lateinit var adapter: HistoryAdapter
+    private lateinit var repairAdapter: HistoryAdapter
+    private lateinit var paymentAdapter: PaymentHistoryAdapter
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -305,8 +390,26 @@ class HistoryFragment : Fragment(R.layout.fragment_history) {
         
         val rvHistory = view.findViewById<RecyclerView>(R.id.rvHistory)
         rvHistory.layoutManager = LinearLayoutManager(context)
-        adapter = HistoryAdapter(emptyList())
-        rvHistory.adapter = adapter
+        repairAdapter = HistoryAdapter(emptyList()) { jobId ->
+            (activity as? HomeActivity)?.navigateToTracking(jobId)
+        }
+        rvHistory.adapter = repairAdapter
+        
+        val rvPayments = view.findViewById<RecyclerView>(R.id.rvPayments)
+        rvPayments.layoutManager = LinearLayoutManager(context)
+        paymentAdapter = PaymentHistoryAdapter(emptyList())
+        rvPayments.adapter = paymentAdapter
+        
+        val rgTabs = view.findViewById<RadioGroup>(R.id.rgTabs)
+        rgTabs.setOnCheckedChangeListener { _, checkedId ->
+            if (checkedId == R.id.rbRepairs) {
+                rvHistory.visibility = View.VISIBLE
+                rvPayments.visibility = View.GONE
+            } else {
+                rvHistory.visibility = View.GONE
+                rvPayments.visibility = View.VISIBLE
+            }
+        }
 
         view.findViewById<TextView>(R.id.tvShopNameHeader)?.text = sessionManager.getShopName() ?: "AutoFix Shop"
 
@@ -321,7 +424,8 @@ class HistoryFragment : Fragment(R.layout.fragment_history) {
             .enqueue(object : Callback<HistoryResponse> {
                 override fun onResponse(call: Call<HistoryResponse>, response: Response<HistoryResponse>) {
                     if (response.isSuccessful) {
-                        response.body()?.repairs?.let { adapter.updateData(it) }
+                        response.body()?.repairs?.let { repairAdapter.updateData(it) }
+                        response.body()?.payments?.let { paymentAdapter.updateData(it) }
                     }
                 }
                 override fun onFailure(call: Call<HistoryResponse>, t: Throwable) {

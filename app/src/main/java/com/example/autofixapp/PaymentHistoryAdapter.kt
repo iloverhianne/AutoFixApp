@@ -6,36 +6,38 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
-class HistoryAdapter(private var repairs: List<RepairHistory>, private val onItemClick: ((String) -> Unit)? = null) :
-    RecyclerView.Adapter<HistoryAdapter.ViewHolder>() {
+class PaymentHistoryAdapter(private var payments: List<PaymentHistory>) :
+    RecyclerView.Adapter<PaymentHistoryAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val tvName: TextView = view.findViewById(R.id.tvHistoryServiceName)
-        val tvStatus: TextView = view.findViewById(R.id.tvHistoryStatus)
-        val tvDate: TextView = view.findViewById(R.id.tvHistoryDate)
-        val tvAmount: TextView = view.findViewById(R.id.tvHistoryAmount)
+        val tvMethod: TextView = view.findViewById(R.id.tvPaymentMethod)
+        val tvStatus: TextView = view.findViewById(R.id.tvPaymentStatus)
+        val tvDate: TextView = view.findViewById(R.id.tvPaymentDate)
+        val tvType: TextView = view.findViewById(R.id.tvPaymentType)
+        val tvAmount: TextView = view.findViewById(R.id.tvPaymentAmount)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_history, parent, false)
+            .inflate(R.layout.item_payment_history, parent, false)
         return ViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val repair = repairs[position]
-        holder.tvName.text = "Job #${repair.job_id} (${repair.plate_no})"
-        holder.tvStatus.text = repair.status.uppercase()
-        holder.tvDate.text = repair.date
-        holder.tvAmount.text = "₱${repair.total_amount}"
-        
+        val payment = payments[position]
+        holder.tvMethod.text = payment.payment_method.uppercase()
+        holder.tvStatus.text = payment.status.uppercase()
+        holder.tvDate.text = payment.date
+        holder.tvType.text = "Type: ${payment.payment_type.uppercase()}"
+        holder.tvAmount.text = "₱${payment.amount}"
+
         // Dynamic status color
-        when (repair.status.lowercase()) {
-            "completed" -> {
+        when (payment.status.lowercase()) {
+            "paid", "completed", "success" -> {
                 holder.tvStatus.setTextColor(android.graphics.Color.parseColor("#03543F"))
                 holder.tvStatus.setBackgroundColor(android.graphics.Color.parseColor("#DEF7EC"))
             }
-            "cancelled" -> {
+            "failed", "cancelled" -> {
                 holder.tvStatus.setTextColor(android.graphics.Color.parseColor("#9B1C1C"))
                 holder.tvStatus.setBackgroundColor(android.graphics.Color.parseColor("#FDE2E2"))
             }
@@ -44,17 +46,12 @@ class HistoryAdapter(private var repairs: List<RepairHistory>, private val onIte
                 holder.tvStatus.setBackgroundColor(android.graphics.Color.parseColor("#DBEAFE"))
             }
         }
-        
-        holder.itemView.setOnClickListener {
-            onItemClick?.invoke(repair.job_id)
-        }
     }
 
-    override fun getItemCount() = repairs.size
+    override fun getItemCount() = payments.size
 
-    fun updateData(newRepairs: List<RepairHistory>) {
-        this.repairs = newRepairs
+    fun updateData(newPayments: List<PaymentHistory>) {
+        this.payments = newPayments
         notifyDataSetChanged()
     }
 }
-

@@ -37,4 +37,5 @@
     <color name="background">@color/deep_dark</color>
     <color name="text_main">@color/text_high</color>
     <color name="text_secondary">@color/text_mid</color>
+    <color name="border">#374151</color>
 </resources>

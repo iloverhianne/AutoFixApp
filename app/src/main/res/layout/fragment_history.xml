@@ -14,7 +14,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
-        android:text="Service History"
+        android:text="Appointments &amp; History"
         android:textColor="@color/text_main"
         android:textSize="26sp"
         android:textStyle="bold" />
@@ -28,12 +28,62 @@
         android:textColor="@color/text_secondary"
         android:textSize="14sp" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvHistory"
+    <!-- Tab Toggle -->
+    <RadioGroup
+        android:id="@+id/rgTabs"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/edit_text_bg"
+        android:orientation="horizontal"
+        android:padding="2dp">
+
+        <RadioButton
+            android:id="@+id/rbRepairs"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/tab_selector"
+            android:button="@null"
+            android:checked="true"
+            android:gravity="center"
+            android:text="Services"
+            android:textColor="@color/tab_text_selector"
+            android:textStyle="bold" />
+
+        <RadioButton
+            android:id="@+id/rbPayments"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/tab_selector"
+            android:button="@null"
+            android:gravity="center"
+            android:text="Payments"
+            android:textColor="@color/tab_text_selector"
+            android:textStyle="bold" />
+    </RadioGroup>
+
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="20dp"
-        android:layout_marginHorizontal="20dp"
-        tools:listitem="@layout/item_history" />
+        android:layout_marginTop="16dp"
+        android:layout_marginHorizontal="20dp">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvHistory"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            tools:listitem="@layout/item_history" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvPayments"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            tools:listitem="@layout/item_payment_history" />
+
+    </FrameLayout>
 
 </LinearLayout>

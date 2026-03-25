@@ -4,7 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/deep_dark">
+    android:background="@color/deep_dark"
+    tools:context=".PaymentActivity">
 
     <ImageButton
         android:id="@+id/btnBackPayment"
@@ -65,7 +66,7 @@
                         android:id="@+id/tvPaymentAmount"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="₱1,500.00"
+                        android:text="₱0.00"
                         android:textColor="@color/white"
                         android:textSize="32sp"
                         android:textStyle="bold" />
@@ -80,10 +81,45 @@
                         android:id="@+id/tvPaymentDesc"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Booking Downpayment for Change Oil"
+                        android:text="Repair Service"
                         android:textColor="@color/text_hint" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
+
+            <!-- Payment Type -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="Payment Type"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <RadioGroup
+                android:id="@+id/rgPaymentType"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="12dp">
+
+                <RadioButton
+                    android:id="@+id/rbDownpayment"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Downpayment (20%)"
+                    android:textColor="@color/white"
+                    android:checked="true" />
+
+                <RadioButton
+                    android:id="@+id/rbFullPayment"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Full Payment"
+                    android:textColor="@color/white" />
+            </RadioGroup>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -96,11 +132,15 @@
 
             <!-- GCash Option -->
             <androidx.cardview.widget.CardView
+                android:id="@+id/cvGcash"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 app:cardBackgroundColor="@color/input_dark"
                 app:cardCornerRadius="12dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
                 app:cardElevation="0dp">
 
                 <LinearLayout
@@ -113,7 +153,7 @@
                         android:layout_width="40dp"
                         android:layout_height="40dp"
                         android:src="@android:drawable/ic_menu_save"
-                        app:tint="@color/vibrant_purple" />
+                        app:tint="#6B46C1" />
 
                     <TextView
                         android:layout_width="0dp"
@@ -125,19 +165,25 @@
                         android:textSize="16sp" />
 
                     <RadioButton
+                        android:id="@+id/rbGcash"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:clickable="false"
                         android:checked="true" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
             <!-- Card Option -->
             <androidx.cardview.widget.CardView
+                android:id="@+id/cvCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 app:cardBackgroundColor="@color/input_dark"
                 app:cardCornerRadius="12dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
                 app:cardElevation="0dp">
 
                 <LinearLayout
@@ -150,7 +196,7 @@
                         android:layout_width="40dp"
                         android:layout_height="40dp"
                         android:src="@android:drawable/ic_menu_compass"
-                        app:tint="@color/vibrant_purple" />
+                        app:tint="#6B46C1" />
 
                     <TextView
                         android:layout_width="0dp"
@@ -162,8 +208,10 @@
                         android:textSize="16sp" />
 
                     <RadioButton
+                        android:id="@+id/rbCard"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
+                        android:layout_height="wrap_content"
+                        android:clickable="false" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
@@ -175,13 +223,56 @@
         android:layout_width="match_parent"
         android:layout_height="60dp"
         android:layout_margin="24dp"
-        android:background="@drawable/button_vibrant"
-        app:backgroundTint="@null"
+        android:backgroundTint="#6B46C1"
         android:text="Proceed to Payment"
         android:textAllCaps="false"
         android:textColor="@color/white"
         android:textSize="18sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent" />
+
+    <!-- Loading Overlay -->
+    <FrameLayout
+        android:id="@+id/loadingOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#80000000"
+        android:elevation="10dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            app:cardBackgroundColor="@color/input_dark"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="8dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="24dp">
+
+                <ProgressBar
+                    android:layout_width="50dp"
+                    android:layout_height="50dp" />
+
+                <TextView
+                    android:id="@+id/tvLoadingStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Processing Payment..."
+                    android:textColor="@color/white"
+                    android:textSize="16sp" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+    </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

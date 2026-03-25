@@ -30,6 +30,14 @@
             android:name=".HomeActivity"
             android:exported="false"
             android:theme="@style/Theme.AutoFixApp" />
+        <activity
+            android:name=".BookingConfirmationActivity"
+            android:exported="false"
+            android:theme="@style/Theme.AutoFixApp" />
+        <activity
+            android:name=".PaymentActivity"
+            android:exported="false"
+            android:theme="@style/Theme.AutoFixApp" />
 
     </application>
 
