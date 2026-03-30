@@ -25,10 +25,10 @@ class AppointmentAdapter(private var appointments: List<RepairHistory>) :
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val appt = appointments[position]
-        holder.tvName.text = "Service Booking"
+        holder.tvName.text = "Service for ${appt.plate_no}"
         holder.tvStatus.text = appt.status.uppercase()
         holder.tvDate.text = appt.date
-        holder.tvTime.text = "Scheduled" // In a real app, you'd have a time field too.
+        holder.tvTime.text = if (appt.status.lowercase() == "confirmed") "Confirmed Slot" else "Pending Review"
         holder.tvEstimate.text = "₱${appt.total_amount}"
         
         // Dynamic status colors

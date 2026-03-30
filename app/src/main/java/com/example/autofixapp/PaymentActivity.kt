@@ -42,9 +42,11 @@ class PaymentActivity : AppCompatActivity() {
     // Intent Extras
     private var serviceId: String = ""
     private var serviceName: String = ""
+    private var vehicleId: String = "0"
     private var date: String = ""
     private var time: String = ""
     private var mechanicId: String? = null
+    private var bayId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,9 +57,11 @@ class PaymentActivity : AppCompatActivity() {
 
         serviceId = intent.getStringExtra("serviceId") ?: ""
         serviceName = intent.getStringExtra("serviceName") ?: "Unknown"
+        vehicleId = intent.getStringExtra("vehicleId") ?: "0"
         date = intent.getStringExtra("date") ?: ""
         time = intent.getStringExtra("time") ?: ""
         mechanicId = intent.getStringExtra("mechanicId")
+        bayId = intent.getStringExtra("bayId")
 
         val estimateStr = intent.getStringExtra("estimate") ?: "0.00"
         fullAmount = estimateStr.toDoubleOrNull() ?: 0.0
@@ -165,13 +169,15 @@ class PaymentActivity : AppCompatActivity() {
         val estimateStr = String.format("%.2f", fullAmount)
 
         apiService.bookAppointment(
-            tenantId = tid,
+            tenantIdQuery = tid,
             customerId = customerId,
             serviceId = serviceId,
+            vehicleId = vehicleId,
             date = date,
             time = time,
             estimate = estimateStr,
-            mechanicId = mechanicId
+            mechanicId = mechanicId,
+            bayId = bayId
         ).enqueue(object : Callback<BaseResponse> {
             override fun onResponse(call: Call<BaseResponse>, response: Response<BaseResponse>) {
                 loadingOverlay.visibility = View.GONE
