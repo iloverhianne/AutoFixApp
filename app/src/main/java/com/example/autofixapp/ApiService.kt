@@ -67,12 +67,88 @@ interface ApiService {
         @Field("tid") tenantId: String,
         @Field("customer_id") customerId: String
     ): Call<HistoryResponse>
+
+    // 2.5.6 Garage / Vehicle Management
+    @FormUrlEncoded
+    @POST("api-mobile.php")
+    fun getGarage(
+        @Field("action") action: String = "get_garage",
+        @Field("tid") tenantId: String,
+        @Field("customer_id") customerId: String
+    ): Call<GarageResponse>
+
+    @FormUrlEncoded
+    @POST("api-mobile.php")
+    fun addVehicle(
+        @Field("action") action: String = "add_vehicle",
+        @Field("tid") tenantId: String,
+        @Field("customer_id") customerId: String,
+        @Field("plate_no") plateNo: String,
+        @Field("make") make: String,
+        @Field("model") model: String,
+        @Field("year") year: String
+    ): Call<BaseResponse>
+
+    // 2.5.7 Loyalty & Rewards
+    @FormUrlEncoded
+    @POST("api-mobile.php")
+    fun getLoyaltyStatus(
+        @Field("action") action: String = "loyalty_status",
+        @Field("tid") tenantId: String,
+        @Field("customer_id") customerId: String
+    ): Call<LoyaltyResponse>
+
+    // 2.5.8 Reviews & Ratings
+    @FormUrlEncoded
+    @POST("api-mobile.php")
+    fun submitReview(
+        @Field("action") action: String = "submit_review",
+        @Field("tid") tenantId: String,
+        @Field("job_id") jobId: String,
+        @Field("rating") rating: Int,
+        @Field("comment") comment: String
+    ): Call<BaseResponse>
+
+    // 2.5.9 Chat & Support
+    @FormUrlEncoded
+    @POST("api-mobile.php")
+    fun getMessages(
+        @Field("action") action: String = "get_messages",
+        @Field("tid") tenantId: String,
+        @Field("customer_id") customerId: String
+    ): Call<ChatResponse>
+
+    @FormUrlEncoded
+    @POST("api-mobile.php")
+    fun sendMessage(
+        @Field("action") action: String = "send_message",
+        @Field("tid") tenantId: String,
+        @Field("customer_id") customerId: String,
+        @Field("message") message: String
+    ): Call<BaseResponse>
 }
 
-// Response Wrappers to match PHP structure
+// Response Wrappers
 data class ServiceResponse(
     val status: String,
     val data: List<Service>
+)
+
+data class GarageResponse(
+    val status: String,
+    val data: List<Vehicle>
+)
+
+data class LoyaltyResponse(
+    val status: String,
+    val points: Int,
+    val tier: String, // Gold, Silver, Bronze
+    val available_promos: List<Promo>
+)
+
+data class ChatResponse(
+    val status: String,
+    val data: List<Message>
 )
 
 data class HistoryResponse(
@@ -98,7 +174,31 @@ data class Service(
     val service_id: String,
     val service_name: String,
     val description: String,
-    val price: String
+    val price: String,
+    val icon_url: String? = null
+)
+
+data class Vehicle(
+    val vehicle_id: String,
+    val plate_no: String,
+    val make: String,
+    val model: String,
+    val year: String,
+    val last_service_date: String? = null
+)
+
+data class Message(
+    val message_id: String,
+    val sender_type: String, // 'customer' or 'shop'
+    val content: String,
+    val created_at: String
+)
+
+data class Promo(
+    val promo_id: String,
+    val title: String,
+    val description: String,
+    val discount: String
 )
 
 data class RepairHistory(
@@ -106,7 +206,8 @@ data class RepairHistory(
     val plate_no: String,
     val status: String,
     val total_amount: String,
-    val date: String
+    val date: String,
+    val rating: Int? = null // For reviews
 )
 
 data class PaymentHistory(
@@ -143,7 +244,8 @@ data class MechanicsBaysResponse(
 data class Mechanic(
     val mechanic_id: String,
     val full_name: String,
-    val specialization: String?
+    val specialization: String?,
+    val avatar_url: String? = null
 )
 
 data class Bay(
@@ -154,5 +256,6 @@ data class Bay(
 data class TimelineItem(
     val status_update: String,
     val remarks: String?,
-    val created_at: String
+    val created_at: String,
+    val inspection_photo: String? = null // For visual updates
 )

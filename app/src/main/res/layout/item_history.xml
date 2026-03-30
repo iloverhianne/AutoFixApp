@@ -3,82 +3,93 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="4dp"
-    android:layout_marginVertical="8dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="2dp">
+    android:layout_marginBottom="16dp"
+    app:cardBackgroundColor="@color/card_surface"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="0dp"
+    app:contentPadding="1dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@drawable/card_gradient_bg"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="20dp">
 
-        <LinearLayout
+        <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:layout_height="wrap_content">
 
-            <TextView
-                android:id="@+id/tvHistoryServiceName"
-                android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Full Engine Wash"
-                android:textColor="@color/text_main"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:layout_alignParentStart="true"
+                android:layout_toStartOf="@+id/tvHistoryStatus"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvHistoryServiceName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Job #12345"
+                    android:textColor="@color/white"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvHistoryDate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Mar 20, 2026"
+                    android:textColor="@color/text_mid"
+                    android:textSize="12sp" />
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/tvHistoryStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="#DEF7EC"
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="4dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="@drawable/status_badge_bg"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="5dp"
                 android:text="COMPLETED"
-                android:textColor="#03543F"
-                android:textSize="12sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/tvHistoryDate"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="March 10, 2024"
-            android:textColor="@color/text_secondary"
-            android:textSize="14sp" />
+                android:textColor="@color/status_completed_text"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.05" />
+        </RelativeLayout>
 
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:layout_marginTop="12dp"
-            android:background="#E2E8F0" />
+            android:layout_marginVertical="16dp"
+            android:background="@color/glass_border" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Amount Paid"
-                android:textColor="@color/text_secondary"
-                android:textSize="14sp" />
+                android:text="Total Service Amount"
+                android:textColor="@color/text_low"
+                android:textSize="12sp" />
 
             <TextView
                 android:id="@+id/tvHistoryAmount"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="₱2,500.00"
-                android:textColor="@color/primary"
+                android:textColor="@color/white"
+                android:textSize="16sp"
                 android:textStyle="bold" />
         </LinearLayout>
-
     </LinearLayout>
 </androidx.cardview.widget.CardView>

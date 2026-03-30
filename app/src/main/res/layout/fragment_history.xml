@@ -40,13 +40,26 @@
         android:padding="2dp">
 
         <RadioButton
-            android:id="@+id/rbRepairs"
+            android:id="@+id/rbAppointments"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:background="@drawable/tab_selector"
             android:button="@null"
             android:checked="true"
+            android:gravity="center"
+            android:text="Bookings"
+            android:textColor="@color/tab_text_selector"
+            android:textStyle="bold" />
+
+        <RadioButton
+            android:id="@+id/rbRepairs"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/tab_selector"
+            android:button="@null"
+            android:checked="false"
             android:gravity="center"
             android:text="Services"
             android:textColor="@color/tab_text_selector"
@@ -72,9 +85,16 @@
         android:layout_marginHorizontal="20dp">
 
         <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvAppointments"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            tools:listitem="@layout/item_appointment_history" />
+
+        <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvHistory"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:visibility="gone"
             tools:listitem="@layout/item_history" />
 
         <androidx.recyclerview.widget.RecyclerView

@@ -31,19 +31,20 @@ class PaymentHistoryAdapter(private var payments: List<PaymentHistory>) :
         holder.tvType.text = "Type: ${payment.payment_type.uppercase()}"
         holder.tvAmount.text = "₱${payment.amount}"
 
-        // Dynamic status color
+        // Dynamic status colors
+        val context = holder.itemView.context
         when (payment.status.lowercase()) {
             "paid", "completed", "success" -> {
-                holder.tvStatus.setTextColor(android.graphics.Color.parseColor("#03543F"))
-                holder.tvStatus.setBackgroundColor(android.graphics.Color.parseColor("#DEF7EC"))
+                holder.tvStatus.setTextColor(context.getColor(R.color.status_completed_text))
+                holder.tvStatus.setBackgroundResource(R.drawable.status_success_badge)
             }
             "failed", "cancelled" -> {
-                holder.tvStatus.setTextColor(android.graphics.Color.parseColor("#9B1C1C"))
-                holder.tvStatus.setBackgroundColor(android.graphics.Color.parseColor("#FDE2E2"))
+                holder.tvStatus.setTextColor(context.getColor(R.color.status_cancelled_text))
+                holder.tvStatus.setBackgroundResource(R.drawable.status_danger_badge)
             }
             else -> {
-                holder.tvStatus.setTextColor(android.graphics.Color.parseColor("#1E40AF"))
-                holder.tvStatus.setBackgroundColor(android.graphics.Color.parseColor("#DBEAFE"))
+                holder.tvStatus.setTextColor(context.getColor(R.color.status_active_text))
+                holder.tvStatus.setBackgroundResource(R.drawable.status_active_badge)
             }
         }
     }

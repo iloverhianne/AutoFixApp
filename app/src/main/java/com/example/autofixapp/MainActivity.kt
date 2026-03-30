@@ -26,14 +26,18 @@ import okhttp3.Request
 class MainActivity : AppCompatActivity() {
 
     private lateinit var sessionManager: SessionManager
-
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
         sessionManager = SessionManager(this)
         
-        // FORCE LOGIN: Clear session on every restart
-        sessionManager.clearSession()
+        // CHECK SESSION: Skip login if already logged in
+        if (sessionManager.isLoggedIn()) {
+            startActivity(android.content.Intent(this, HomeActivity::class.java))
+            finish()
+            return
+        }
         
         setContentView(R.layout.activity_main)
 
@@ -163,7 +167,9 @@ class MainActivity : AppCompatActivity() {
     private fun proceedToDashboard(customerId: String, name: String, email: String, tenantId: String, shopName: String, role: String) {
         sessionManager.saveSession(customerId, name, email, tenantId, shopName, role)
         Toast.makeText(this, "Welcome to $shopName! ($role)", Toast.LENGTH_LONG).show()
-        startActivity(android.content.Intent(this, HomeActivity::class.java))
+        val intent = android.content.Intent(this, HomeActivity::class.java)
+        intent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
         finish()
     }
 }
