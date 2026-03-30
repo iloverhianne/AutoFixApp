@@ -49,7 +49,7 @@
     <color name="status_active_bg">#1A1E3A8A</color> <!-- Transparent Blue -->
     <color name="status_active_text">#3B82F6</color>
     
-    <!-- Card & Surfaces -->
+    <!-- Card and Surfaces -->
     <color name="card_surface">#1F2937</color>
     <color name="card_outline">#374151</color>
 </resources>

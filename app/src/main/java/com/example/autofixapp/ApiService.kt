@@ -5,26 +5,27 @@ import retrofit2.http.*
 
 interface ApiService {
     @FormUrlEncoded
-    @POST("api-mobile.php")
+    @POST("api-mobile.php?action=login")
     fun login(
-        @Query("action") action: String,
+        @Query("action") actionQuery: String,
+        @Field("action") actionField: String,
         @Field("email") email: String,
         @Field("password") password: String
     ): Call<LoginResponse>
 
     // 2.5.2 Service Appointment Booking
-    @FormUrlEncoded
-    @POST("api-mobile.php")
+    @POST("api-mobile.php?action=get_services")
     fun getServices(
-        @Field("action") action: String = "get_services",
-        @Field("tid") tenantId: String
+        @Query("tid") tenantId: String
     ): Call<ServiceResponse>
 
     @FormUrlEncoded
-    @POST("api-mobile.php")
+    @POST("api-mobile.php?action=book_appointment")
     fun bookAppointment(
-        @Query("action") action: String = "book_appointment",
-        @Query("tid") tenantId: String,
+        @Query("action") actionQuery: String,
+        @Query("tid") tenantIdQuery: String,
+        @Field("action") actionField: String,
+        @Field("tid") tenantIdField: String,
         @Field("customer_id") customerId: String,
         @Field("service_id") serviceId: String,
         @Field("vehicle_id") vehicleId: String = "0",
@@ -35,53 +36,57 @@ interface ApiService {
         @Field("bay_id") bayId: String? = null
     ): Call<BaseResponse>
 
-    @FormUrlEncoded
-    @POST("api-mobile.php")
+    @POST("api-mobile.php?action=get_availability")
     fun getAvailability(
-        @Field("action") action: String = "get_availability",
-        @Field("tid") tenantId: String
+        @Query("tid") tenantId: String
     ): Call<AvailabilityResponse>
 
-    @FormUrlEncoded
-    @POST("api-mobile.php")
+    @POST("api-mobile.php?action=get_mechanics_and_bays")
     fun getMechanicsAndBays(
-        @Field("action") action: String = "get_mechanics_and_bays",
-        @Field("tid") tenantId: String
+        @Query("tid") tenantId: String
     ): Call<MechanicsBaysResponse>
 
     // 2.5.4 Repair Status Tracking
     @FormUrlEncoded
-    @POST("api-mobile.php")
+    @POST("api-mobile.php?action=track_repair")
     fun trackRepair(
-        @Field("action") action: String = "track_repair",
-        @Field("tid") tenantId: String,
+        @Query("action") actionQuery: String,
+        @Query("tid") tenantIdQuery: String,
+        @Field("action") actionField: String,
+        @Field("tid") tenantIdField: String,
         @Field("job_id") jobId: String,
         @Field("customer_id") customerId: String
     ): Call<TrackingResponse>
 
     // 2.5.5 Service & Payment History
     @FormUrlEncoded
-    @POST("api-mobile.php")
+    @POST("api-mobile.php?action=get_history")
     fun getHistory(
-        @Field("action") action: String = "history",
-        @Field("tid") tenantId: String,
+        @Query("action") actionQuery: String,
+        @Query("tid") tenantIdQuery: String,
+        @Field("action") actionField: String,
+        @Field("tid") tenantIdField: String,
         @Field("customer_id") customerId: String
     ): Call<HistoryResponse>
 
     // 2.5.6 Garage / Vehicle Management
     @FormUrlEncoded
-    @POST("api-mobile.php")
+    @POST("api-mobile.php?action=get_garage")
     fun getGarage(
-        @Field("action") action: String = "get_garage",
-        @Field("tid") tenantId: String,
+        @Query("action") actionQuery: String,
+        @Query("tid") tenantIdQuery: String,
+        @Field("action") actionField: String,
+        @Field("tid") tenantIdField: String,
         @Field("customer_id") customerId: String
     ): Call<GarageResponse>
 
     @FormUrlEncoded
-    @POST("api-mobile.php")
+    @POST("api-mobile.php?action=add_vehicle")
     fun addVehicle(
-        @Field("action") action: String = "add_vehicle",
-        @Field("tid") tenantId: String,
+        @Query("action") actionQuery: String,
+        @Query("tid") tenantIdQuery: String,
+        @Field("action") actionField: String,
+        @Field("tid") tenantIdField: String,
         @Field("customer_id") customerId: String,
         @Field("plate_no") plateNo: String,
         @Field("make") make: String,
@@ -91,19 +96,23 @@ interface ApiService {
 
     // 2.5.7 Loyalty & Rewards
     @FormUrlEncoded
-    @POST("api-mobile.php")
+    @POST("api-mobile.php?action=loyalty_status")
     fun getLoyaltyStatus(
-        @Field("action") action: String = "loyalty_status",
-        @Field("tid") tenantId: String,
+        @Query("action") actionQuery: String,
+        @Query("tid") tenantIdQuery: String,
+        @Field("action") actionField: String,
+        @Field("tid") tenantIdField: String,
         @Field("customer_id") customerId: String
     ): Call<LoyaltyResponse>
 
     // 2.5.8 Reviews & Ratings
     @FormUrlEncoded
-    @POST("api-mobile.php")
+    @POST("api-mobile.php?action=submit_review")
     fun submitReview(
-        @Field("action") action: String = "submit_review",
-        @Field("tid") tenantId: String,
+        @Query("action") actionQuery: String,
+        @Query("tid") tenantIdQuery: String,
+        @Field("action") actionField: String,
+        @Field("tid") tenantIdField: String,
         @Field("job_id") jobId: String,
         @Field("rating") rating: Int,
         @Field("comment") comment: String
@@ -111,22 +120,41 @@ interface ApiService {
 
     // 2.5.9 Chat & Support
     @FormUrlEncoded
-    @POST("api-mobile.php")
+    @POST("api-mobile.php?action=get_messages")
     fun getMessages(
-        @Field("action") action: String = "get_messages",
-        @Field("tid") tenantId: String,
+        @Query("action") actionQuery: String,
+        @Query("tid") tenantIdQuery: String,
+        @Field("action") actionField: String,
+        @Field("tid") tenantIdField: String,
         @Field("customer_id") customerId: String
     ): Call<ChatResponse>
 
     @FormUrlEncoded
-    @POST("api-mobile.php")
+    @POST("api-mobile.php?action=send_message")
     fun sendMessage(
-        @Field("action") action: String = "send_message",
-        @Field("tid") tenantId: String,
+        @Query("action") actionQuery: String,
+        @Query("tid") tenantIdQuery: String,
+        @Field("action") actionField: String,
+        @Field("tid") tenantIdField: String,
         @Field("customer_id") customerId: String,
         @Field("message") message: String
     ): Call<BaseResponse>
+
+    @FormUrlEncoded
+    @POST("api-mobile.php?action=get_booked_slots")
+    fun getBookedSlots(
+        @Query("action") actionQuery: String,
+        @Query("tid") tenantIdQuery: String,
+        @Field("action") actionField: String,
+        @Field("tid") tenantIdField: String,
+        @Field("date") date: String
+    ): Call<BookedSlotsResponse>
 }
+
+data class BookedSlotsResponse(
+    val status: String,
+    val booked_slots: List<String>
+)
 
 // Response Wrappers
 data class ServiceResponse(
