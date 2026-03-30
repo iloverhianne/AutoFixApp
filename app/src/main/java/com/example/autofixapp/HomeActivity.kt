@@ -388,40 +388,38 @@ class GarageFragment : Fragment(R.layout.fragment_garage) {
 
     private fun showAddVehicleDialog(emptyState: LinearLayout) {
         val context = requireContext()
-        val builder = AlertDialog.Builder(context)
-        val view = LayoutInflater.from(context).inflate(android.R.layout.select_dialog_item, null) // Generic for demo
+        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_add_vehicle, null)
         
-        // Let's use a simple layout for add vehicle
-        val layout = LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(60, 40, 60, 40)
-        }
-        
-        val etPlate = EditText(context).apply { hint = "Plate Number" }
-        val etMake = EditText(context).apply { hint = "Make (e.g. Toyota)" }
-        val etModel = EditText(context).apply { hint = "Model (e.g. Vios)" }
-        val etYear = EditText(context).apply { hint = "Year (e.g. 2022)" }
-        
-        layout.addView(etPlate)
-        layout.addView(etMake)
-        layout.addView(etModel)
-        layout.addView(etYear)
-        
-        builder.setTitle("Register Vehicle")
-            .setView(layout)
-            .setPositiveButton("Add") { _, _ ->
-                val p = etPlate.text.toString().trim()
-                val mk = etMake.text.toString().trim()
-                val md = etModel.text.toString().trim()
-                val yr = etYear.text.toString().trim()
-                
-                if (p.isNotEmpty() && mk.isNotEmpty() && md.isNotEmpty() && yr.isNotEmpty()) {
-                    registerVehicle(p, mk, md, yr, emptyState)
-                }
+        val etPlate = dialogView.findViewById<EditText>(R.id.etPlate)
+        val etMake = dialogView.findViewById<EditText>(R.id.etMake)
+        val etModel = dialogView.findViewById<EditText>(R.id.etModel)
+        val etYear = dialogView.findViewById<EditText>(R.id.etYear)
+        val btnAdd = dialogView.findViewById<Button>(R.id.btnAdd)
+        val btnCancel = dialogView.findViewById<Button>(R.id.btnCancel)
+
+        val dialog = AlertDialog.Builder(context, R.style.CustomDialog)
+            .setView(dialogView)
+            .create()
+
+        btnAdd.setOnClickListener {
+            val p = etPlate.text.toString().trim()
+            val mk = etMake.text.toString().trim()
+            val md = etModel.text.toString().trim()
+            val yr = etYear.text.toString().trim()
+            
+            if (p.isEmpty() || mk.isEmpty() || md.isEmpty() || yr.isEmpty()) {
+                Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
             }
-            .setNegativeButton("Cancel", null)
-            .show()
+
+            registerVehicle(p, mk, md, yr, emptyState)
+            dialog.dismiss()
+        }
+
+        btnCancel.setOnClickListener { dialog.dismiss() }
+        dialog.show()
     }
+
 
     private fun registerVehicle(p: String, mk: String, md: String, yr: String, emptyState: LinearLayout) {
         val sm = SessionManager(requireContext())
