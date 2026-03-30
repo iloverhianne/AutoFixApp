@@ -152,7 +152,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     }
 
     private fun fetchLoyalty(tvPoints: TextView, tvTier: TextView, layoutPromos: LinearLayout, tid: String, cid: String) {
-        RetrofitClient.getApiService(requireContext()).getLoyaltyStatus("loyalty_status", tid, "loyalty_status", tid, cid)
+        RetrofitClient.getApiService(requireContext()).getLoyaltyStatus(tid, cid)
             .enqueue(object : Callback<LoyaltyResponse> {
                 override fun onResponse(call: Call<LoyaltyResponse>, response: Response<LoyaltyResponse>) {
                     if (response.isSuccessful && response.body()?.status == "success") {
@@ -295,7 +295,7 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
         })
 
         // 2. Fetch Garage (Vehicles)
-        api.getGarage("get_garage", tid, "get_garage", tid, cid).enqueue(object : Callback<GarageResponse> {
+        api.getGarage(tid, cid).enqueue(object : Callback<GarageResponse> {
             override fun onResponse(call: Call<GarageResponse>, response: Response<GarageResponse>) {
                 if (response.isSuccessful && response.body()?.status == "success") {
                     vehicleList = response.body()?.data ?: emptyList()
@@ -385,7 +385,7 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                 etDate.setText(dateStr)
                 
                 // Fetch Booked Slots for this date
-                api.getBookedSlots("get_booked_slots", tid, "get_booked_slots", tid, dateStr).enqueue(object : Callback<BookedSlotsResponse> {
+                api.getBookedSlots(tid, dateStr).enqueue(object : Callback<BookedSlotsResponse> {
                     override fun onResponse(call: Call<BookedSlotsResponse>, response: Response<BookedSlotsResponse>) {
                         if (response.isSuccessful && response.body()?.status == "success") {
                             updateTimeSlots(response.body()?.booked_slots ?: emptyList())
@@ -581,10 +581,7 @@ class GarageFragment : Fragment(R.layout.fragment_garage) {
         
         RetrofitClient.getApiService(context)
             .addVehicle(
-                actionQuery = "add_vehicle",
                 tenantIdQuery = sm.getTenantId() ?: "1",
-                actionField = "add_vehicle",
-                tenantIdField = sm.getTenantId() ?: "1",
                 customerId = sm.getCustomerId() ?: "", 
                 plateNo = p.uppercase(), 
                 make = mk, 
@@ -614,7 +611,7 @@ class GarageFragment : Fragment(R.layout.fragment_garage) {
 
     private fun fetchGarage(emptyState: LinearLayout) {
         val sm = SessionManager(requireContext())
-        RetrofitClient.getApiService(requireContext()).getGarage("get_garage", sm.getTenantId() ?: "1", "get_garage", sm.getTenantId() ?: "1", sm.getCustomerId() ?: "")
+        RetrofitClient.getApiService(requireContext()).getGarage(sm.getTenantId() ?: "1", sm.getCustomerId() ?: "")
             .enqueue(object : Callback<GarageResponse> {
                 override fun onResponse(call: Call<GarageResponse>, response: Response<GarageResponse>) {
                     if (response.isSuccessful && response.body()?.status == "success") {
@@ -663,7 +660,7 @@ class HistoryFragment : Fragment(R.layout.fragment_history) {
             rvPayments.visibility = if (checkedId == R.id.rbPayments) View.VISIBLE else View.GONE
         }
 
-        api.getHistory("get_history", sm.getTenantId() ?: "1", "get_history", sm.getTenantId() ?: "1", customerId = sm.getCustomerId() ?: "").enqueue(object : Callback<HistoryResponse> {
+        api.getHistory(sm.getTenantId() ?: "1", customerId = sm.getCustomerId() ?: "").enqueue(object : Callback<HistoryResponse> {
             override fun onResponse(call: Call<HistoryResponse>, response: Response<HistoryResponse>) {
                 if (response.isSuccessful) {
                     val reps = response.body()?.repairs ?: emptyList()
@@ -702,7 +699,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
             val jobId = etJobId.text.toString().trim()
             if (jobId.isEmpty()) return@setOnClickListener
 
-            api.trackRepair("track_repair", sm.getTenantId() ?: "1", "track_repair", sm.getTenantId() ?: "1", jobId, sm.getCustomerId() ?: "")
+            api.trackRepair(sm.getTenantId() ?: "1", jobId, sm.getCustomerId() ?: "")
                 .enqueue(object : Callback<TrackingResponse> {
                     override fun onResponse(call: Call<TrackingResponse>, response: Response<TrackingResponse>) {
                         if (response.isSuccessful && response.body()?.status == "success") {

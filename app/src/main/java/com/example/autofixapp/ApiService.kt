@@ -22,10 +22,7 @@ interface ApiService {
     @FormUrlEncoded
     @POST("api-mobile.php?action=book_appointment")
     fun bookAppointment(
-        @Query("action") actionQuery: String,
         @Query("tid") tenantIdQuery: String,
-        @Field("action") actionField: String,
-        @Field("tid") tenantIdField: String,
         @Field("customer_id") customerId: String,
         @Field("service_id") serviceId: String,
         @Field("vehicle_id") vehicleId: String = "0",
@@ -50,10 +47,7 @@ interface ApiService {
     @FormUrlEncoded
     @POST("api-mobile.php?action=track_repair")
     fun trackRepair(
-        @Query("action") actionQuery: String,
         @Query("tid") tenantIdQuery: String,
-        @Field("action") actionField: String,
-        @Field("tid") tenantIdField: String,
         @Field("job_id") jobId: String,
         @Field("customer_id") customerId: String
     ): Call<TrackingResponse>
@@ -62,10 +56,7 @@ interface ApiService {
     @FormUrlEncoded
     @POST("api-mobile.php?action=get_history")
     fun getHistory(
-        @Query("action") actionQuery: String,
         @Query("tid") tenantIdQuery: String,
-        @Field("action") actionField: String,
-        @Field("tid") tenantIdField: String,
         @Field("customer_id") customerId: String
     ): Call<HistoryResponse>
 
@@ -73,20 +64,14 @@ interface ApiService {
     @FormUrlEncoded
     @POST("api-mobile.php?action=get_garage")
     fun getGarage(
-        @Query("action") actionQuery: String,
         @Query("tid") tenantIdQuery: String,
-        @Field("action") actionField: String,
-        @Field("tid") tenantIdField: String,
         @Field("customer_id") customerId: String
     ): Call<GarageResponse>
 
     @FormUrlEncoded
     @POST("api-mobile.php?action=add_vehicle")
     fun addVehicle(
-        @Query("action") actionQuery: String,
         @Query("tid") tenantIdQuery: String,
-        @Field("action") actionField: String,
-        @Field("tid") tenantIdField: String,
         @Field("customer_id") customerId: String,
         @Field("plate_no") plateNo: String,
         @Field("make") make: String,
@@ -98,10 +83,7 @@ interface ApiService {
     @FormUrlEncoded
     @POST("api-mobile.php?action=loyalty_status")
     fun getLoyaltyStatus(
-        @Query("action") actionQuery: String,
         @Query("tid") tenantIdQuery: String,
-        @Field("action") actionField: String,
-        @Field("tid") tenantIdField: String,
         @Field("customer_id") customerId: String
     ): Call<LoyaltyResponse>
 
@@ -132,10 +114,7 @@ interface ApiService {
     @FormUrlEncoded
     @POST("api-mobile.php?action=send_message")
     fun sendMessage(
-        @Query("action") actionQuery: String,
         @Query("tid") tenantIdQuery: String,
-        @Field("action") actionField: String,
-        @Field("tid") tenantIdField: String,
         @Field("customer_id") customerId: String,
         @Field("message") message: String
     ): Call<BaseResponse>
@@ -143,10 +122,7 @@ interface ApiService {
     @FormUrlEncoded
     @POST("api-mobile.php?action=get_booked_slots")
     fun getBookedSlots(
-        @Query("action") actionQuery: String,
         @Query("tid") tenantIdQuery: String,
-        @Field("action") actionField: String,
-        @Field("tid") tenantIdField: String,
         @Field("date") date: String
     ): Call<BookedSlotsResponse>
 }

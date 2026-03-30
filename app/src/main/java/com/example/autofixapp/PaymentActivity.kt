@@ -169,10 +169,7 @@ class PaymentActivity : AppCompatActivity() {
         val estimateStr = String.format("%.2f", fullAmount)
 
         apiService.bookAppointment(
-            actionQuery = "book_appointment",
             tenantIdQuery = tid,
-            actionField = "book_appointment",
-            tenantIdField = tid,
             customerId = customerId,
             serviceId = serviceId,
             vehicleId = vehicleId,
