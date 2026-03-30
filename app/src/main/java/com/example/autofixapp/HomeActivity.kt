@@ -1,6 +1,7 @@
 package com.example.autofixapp
 
 import android.content.Context
+import com.google.gson.GsonBuilder
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -327,28 +328,31 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
         // 4. Fetch Mechanics & Bays
         api.getMechanicsAndBays(tid).enqueue(object : Callback<MechanicsBaysResponse> {
             override fun onResponse(call: Call<MechanicsBaysResponse>, response: Response<MechanicsBaysResponse>) {
+                val list = mutableListOf<Pair<Mechanic, Bay>>()
+                list.add(Mechanic("0", "Any available mechanic", "") to Bay("0", "Any"))
+
                 if (response.isSuccessful && response.body()?.status == "success") {
                     val body = response.body()!!
-                    val customNames = listOf("John Benedict", "Justine Dayao", "Keane Manaloto")
-                    val list = mutableListOf<Pair<Mechanic, Bay>>()
-                    
-                    val maxSize = maxOf(body.mechanics.size, body.bays.size, 3) 
-                    for (i in 0 until maxSize) {
-                        val originalM = body.mechanics.getOrNull(i)
-                        val name = customNames.getOrNull(i) ?: originalM?.full_name ?: "Auto Assign"
-                        val m = Mechanic(originalM?.mechanic_id ?: "0", name, originalM?.specialization)
-                        
-                        val b = body.bays.getOrNull(i % body.bays.size) ?: Bay("0", "Any Bay")
+                    for (i in 0 until body.mechanics.size) {
+                        val m = body.mechanics[i]
+                        val b = if (body.bays.isNotEmpty()) body.bays.getOrNull(i % body.bays.size) ?: Bay("0", "Any") else Bay("0", "Any")
                         list.add(m to b)
                     }
-                    mechBaysList = list
-                    val labels = list.map { "${it.second.bay_name} - ${it.first.full_name}" }
-                    val adapter = ArrayAdapter(context, R.layout.spinner_item, labels)
-                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-                    spinnerAssignment.adapter = adapter
                 }
+                
+                mechBaysList = list
+                val labels = list.map { it.first.full_name }
+                val adapter = ArrayAdapter(context, R.layout.spinner_item, labels)
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                spinnerAssignment.adapter = adapter
             }
-            override fun onFailure(call: Call<MechanicsBaysResponse>, t: Throwable) {}
+            override fun onFailure(call: Call<MechanicsBaysResponse>, t: Throwable) {
+                val list = listOf(Mechanic("0", "Any available mechanic", "") to Bay("0", "Any"))
+                mechBaysList = list
+                val adapter = ArrayAdapter(context, R.layout.spinner_item, list.map { it.first.full_name })
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                spinnerAssignment.adapter = adapter
+            }
         })
 
         spinnerService.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
@@ -359,7 +363,11 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
         }
 
         // 5. Time Slots (8 AM to 5 PM)
-        val allTimeSlots = listOf("8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM")
+        val allTimeSlots = listOf(
+            "8:00 AM", "8:30 AM", "9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM", 
+            "11:00 AM", "11:30 AM", "12:00 PM", "12:30 PM", "1:00 PM", "1:30 PM", 
+            "2:00 PM", "2:30 PM", "3:00 PM", "3:30 PM", "4:00 PM", "4:30 PM"
+        )
         
         fun updateTimeSlots(bookedSlots: List<String>) {
             val availableSlots = allTimeSlots.filter { slot -> !bookedSlots.contains(slot) }
@@ -401,34 +409,49 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                 })
             }, c.get(java.util.Calendar.YEAR), c.get(java.util.Calendar.MONTH), c.get(java.util.Calendar.DAY_OF_MONTH))
             
+            datePickerDialog.datePicker.minDate = System.currentTimeMillis() - 1000
             datePickerDialog.show()
         }
 
         btnSubmit.setOnClickListener {
-            if (etDate.text.isEmpty()) {
-                Toast.makeText(context, "Please select a date", Toast.LENGTH_SHORT).show()
+            // 1. Check Vehicle
+            if (vehicleList.isEmpty()) {
+                Toast.makeText(context, "⚠️ Paki-add muna ng sasakyan sa iyong Garage.", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+            if (spinnerVehicle.selectedItemPosition < 0) {
+                Toast.makeText(context, "⚠️ Paki-select po ng sasakyan.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            if (vehicleList.isEmpty()) {
-                Toast.makeText(context, "Please add a vehicle in your Garage first!", Toast.LENGTH_LONG).show()
+            // 2. Check Service
+            val selectedService = servicesList.getOrNull(spinnerService.selectedItemPosition)
+            val estimateVal = tvEstimate.text.toString().replace("₱", "").trim()
+            if (selectedService == null || estimateVal.isEmpty() || estimateVal == "0.00") {
+                Toast.makeText(context, "⚠️ Pumili po muna ng valid na Service.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            // 3. Check Date
+            if (etDate.text.isEmpty()) {
+                Toast.makeText(context, "⚠️ Pakipili po ng Preferred Date.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            // 4. Check Time Slot
+            if (spinnerTime.selectedItem == null) {
+                Toast.makeText(context, "⚠️ Pakipili po ng available na Time Slot.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            // 5. Check Assignment (Wait for load)
+            val selectedAssgn = mechBaysList.getOrNull(spinnerAssignment.selectedItemPosition)
+            if (selectedAssgn == null) {
+                Toast.makeText(context, "⌛ Loading pa po ang mechanics, sandali lang...", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
             val selectedVehicleId = vehicleList.getOrNull(spinnerVehicle.selectedItemPosition)?.vehicle_id ?: "0"
-            val selectedService = servicesList.getOrNull(spinnerService.selectedItemPosition)
-            val estimateVal = tvEstimate.text.toString().replace("₱", "").trim()
-            val selectedAssgn = mechBaysList.getOrNull(spinnerAssignment.selectedItemPosition)
-
-            if (selectedService == null || estimateVal.isEmpty() || estimateVal == "0.00") {
-                Toast.makeText(context, "Paki-select po muna ng valid service", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            if (spinnerTime.selectedItem == null) {
-                Toast.makeText(context, "Please select an available time slot", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
 
             // Check if date is in the past
             val today = java.util.Calendar.getInstance().apply { 
@@ -438,7 +461,7 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                 set(java.util.Calendar.MILLISECOND, 0)
             }
             if (selectedCalendar != null && selectedCalendar!!.before(today)) {
-                Toast.makeText(context, "Bawal po pumili ng nakalipas na araw.", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "⚠️ Bawal po pumili ng nakalipas na araw.", Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
 
@@ -450,8 +473,8 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                 putExtra("date", etDate.text.toString())
                 putExtra("time", spinnerTime.selectedItem?.toString())
                 putExtra("estimate", estimateVal)
-                putExtra("mechanicId", selectedAssgn?.first?.mechanic_id)
-                putExtra("bayId", selectedAssgn?.second?.bay_id)
+                putExtra("mechanicId", selectedAssgn.first.mechanic_id)
+                putExtra("bayId", selectedAssgn.second.bay_id)
             }
             startActivity(intent)
         }
@@ -597,23 +620,43 @@ class HistoryFragment : Fragment(R.layout.fragment_history) {
         rvPayments.layoutManager = LinearLayoutManager(context)
         rvPayments.adapter = payAdapter
 
+        fun refreshData() {
+            val tid = sm.getTenantId() ?: "1"
+            val cid = sm.getCustomerId() ?: ""
+            val ts = System.currentTimeMillis().toString()
+            
+            api.getHistory(tid, customerId = cid, version = ts).enqueue(object : Callback<HistoryResponse> {
+                override fun onResponse(call: Call<HistoryResponse>, response: Response<HistoryResponse>) {
+                    if (response.isSuccessful) {
+                        val body = response.body()
+                        val reps = body?.repairs ?: emptyList()
+                        
+                        if (body?.status == "error") {
+                            Toast.makeText(context, "Server Error: ${body.message}", Toast.LENGTH_LONG).show()
+                        }
+                        
+                        // Pass ALL data to adapters
+                        apptAdapter.updateData(reps)
+                        repairAdapter.updateData(reps)
+                        body?.payments?.let { payAdapter.updateData(it) }
+                    } else {
+                        Toast.makeText(context, "Sync Error [${response.code()}]", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                override fun onFailure(call: Call<HistoryResponse>, t: Throwable) {
+                    Toast.makeText(context, "Connect Error: ${t.message}", Toast.LENGTH_SHORT).show()
+                }
+            })
+        }
+
         rgTabs.setOnCheckedChangeListener { _, checkedId ->
             rvAppts.visibility = if (checkedId == R.id.rbAppointments) View.VISIBLE else View.GONE
             rvHistory.visibility = if (checkedId == R.id.rbRepairs) View.VISIBLE else View.GONE
             rvPayments.visibility = if (checkedId == R.id.rbPayments) View.VISIBLE else View.GONE
+            refreshData()
         }
 
-        api.getHistory(sm.getTenantId() ?: "1", customerId = sm.getCustomerId() ?: "").enqueue(object : Callback<HistoryResponse> {
-            override fun onResponse(call: Call<HistoryResponse>, response: Response<HistoryResponse>) {
-                if (response.isSuccessful) {
-                    val reps = response.body()?.repairs ?: emptyList()
-                    apptAdapter.updateData(reps.filter { it.status.lowercase() == "pending" || it.status.lowercase() == "confirmed" })
-                    repairAdapter.updateData(reps.filter { it.status.lowercase() != "pending" && it.status.lowercase() != "confirmed" })
-                    response.body()?.payments?.let { payAdapter.updateData(it) }
-                }
-            }
-            override fun onFailure(call: Call<HistoryResponse>, t: Throwable) {}
-        })
+        refreshData()
     }
 }
 

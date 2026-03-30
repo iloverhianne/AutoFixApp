@@ -122,25 +122,74 @@ class PaymentActivity : AppCompatActivity() {
 
     private fun processPayment() {
         val paymentMethod = if (rbGcash.isChecked) "GCash" else "Credit/Debit Card"
+        
+        // Detailed log to match the console
+        android.util.Log.d("PAYMENT_SIM", "Initializing PayMongo Intent for $amountToPay ($paymentMethod)")
 
-        // Show Loading Overlay
-        loadingOverlay.visibility = View.VISIBLE
+        // For simulation, let's create a WebView in a Dialog to "simulate" PayMongo Checkout
+        val webView = android.webkit.WebView(this)
+        webView.settings.javaScriptEnabled = true
+        
+        val dialog = AlertDialog.Builder(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+            .setView(webView)
+            .setCancelable(false)
+            .create()
 
-        // Simulate PayMongo Payment Processing Delay
-        Handler(Looper.getMainLooper()).postDelayed({
+        // Mock PayMongo HTML
+        val html = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <style>
+                    body { font-family: sans-serif; background: #030712; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
+                    .card { background: #111827; padding: 30px; border-radius: 20px; width: 85%; border: 1px solid #1f2937; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+                    .logo { width: 140px; margin-bottom: 30px; }
+                    .amount { font-size: 32px; font-weight: bold; color: #10b981; margin: 10px 0; }
+                    .btn { background: #005ce6; color: white; border: none; padding: 15px; width: 100%; border-radius: 12px; font-weight: bold; margin-top: 30px; font-size: 16px; cursor: pointer; }
+                    .loading { display: none; margin-top: 20px; color: #94a3b8; }
+                </style>
+            </head>
+            <body>
+                <div class="card" id="card">
+                    <img src="https://www.paymongo.com/static/images/paymongo-logo-horizontal.svg" class="logo">
+                    <div style="color: #94a3b8; font-size: 14px;">Total Amount Due</div>
+                    <div class="amount">₱${String.format("%.2f", amountToPay)}</div>
+                    <div style="font-size: 12px; color: #4b5563; margin-top: 5px;">Ref: PAY-SIM-${System.currentTimeMillis() % 10000}</div>
+                    
+                    <button class="btn" onclick="payNow()">PAY WITH GCASH</button>
+                    <div id="loader" class="loading">Processing payment...</div>
+                    
+                    <div style="margin-top: 20px; font-size: 11px; color: #374151;">Redirecting to GCash Gateway...</div>
+                </div>
 
-            // For simple interface simulation, assume payment is successful.
-            val isSuccess = true
+                <script>
+                    function payNow() {
+                        document.querySelector('.btn').style.display = 'none';
+                        document.getElementById('loader').style.display = 'block';
+                        
+                        setTimeout(() => {
+                            window.location.href = "https://success.paymongo.com/?status=success";
+                        }, 2500);
+                    }
+                </script>
+            </body>
+            </html>
+        """.trimIndent()
 
-            loadingOverlay.visibility = View.GONE
-
-            if (isSuccess) {
-                showSuccessDialog()
-            } else {
-                Toast.makeText(this, "Payment failed. Please try again.", Toast.LENGTH_SHORT).show()
+        webView.webViewClient = object : android.webkit.WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: android.webkit.WebView?, url: String?): Boolean {
+                if (url?.contains("status=success") == true) {
+                    dialog.dismiss()
+                    showSuccessDialog()
+                    return true
+                }
+                return false
             }
+        }
 
-        }, 2000)
+        webView.loadDataWithBaseURL("https://pay.paymongo.com", html, "text/html", "UTF-8", null)
+        dialog.show()
     }
 
     private fun showSuccessDialog() {

@@ -57,7 +57,8 @@ interface ApiService {
     @POST("api-mobile.php?action=get_history")
     fun getHistory(
         @Query("tid") tenantIdQuery: String,
-        @Field("customer_id") customerId: String
+        @Field("customer_id") customerId: String,
+        @Query("v") version: String = System.currentTimeMillis().toString()
     ): Call<HistoryResponse>
 
     // 2.5.6 Garage / Vehicle Management
@@ -121,6 +122,15 @@ interface ApiService {
     ): Call<BaseResponse>
 
     @FormUrlEncoded
+    @POST("api-mobile.php?action=create_payment_intent")
+    fun createPaymentIntent(
+        @Query("tid") tenantIdQuery: String,
+        @Field("customer_id") customerId: String,
+        @Field("amount") amount: String,
+        @Field("type") type: String // DOWNPAYMENT or FULL_PAYMENT
+    ): Call<PaymentIntentResponse>
+
+    @FormUrlEncoded
     @POST("api-mobile.php?action=record_payment")
     fun recordPayment(
         @Query("tid") tenantIdQuery: String,
@@ -138,6 +148,12 @@ interface ApiService {
         @Field("date") date: String
     ): Call<BookedSlotsResponse>
 }
+
+data class PaymentIntentResponse(
+    val status: String,
+    val checkout_url: String,
+    val transaction_id: String
+)
 
 data class BookedSlotsResponse(
     val status: String,
@@ -169,6 +185,7 @@ data class ChatResponse(
 
 data class HistoryResponse(
     val status: String,
+    val message: String? = null,
     val repairs: List<RepairHistory>,
     val payments: List<PaymentHistory>
 )
