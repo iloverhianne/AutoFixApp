@@ -516,9 +516,9 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         val etJobId = view.findViewById<EditText>(R.id.etJobId)
         val btnTrack = view.findViewById<Button>(R.id.btnTrackRepair)
         val rv = view.findViewById<RecyclerView>(R.id.rvTimeline)
-        val layoutDetails = view.findViewById<LinearLayout>(R.id.layoutJobDetails)
-        val tvStatus = view.findViewById<TextView>(R.id.tvJobStatus)
-        val tvCar = view.findViewById<TextView>(R.id.tvJobCar)
+        val layoutJobDetails = view.findViewById<LinearLayout>(R.id.layoutTrackingDetails)
+        val tvJobStatus = view.findViewById<TextView>(R.id.tvTrackStatus)
+        val tvJobCar = view.findViewById<TextView>(R.id.tvTrackVehicle)
 
         adapter = TimelineAdapter(timeline)
         rv.layoutManager = LinearLayoutManager(context)
@@ -533,9 +533,9 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
                     override fun onResponse(call: Call<TrackingResponse>, response: Response<TrackingResponse>) {
                         if (response.isSuccessful && response.body()?.status == "success") {
                             val data = response.body()!!
-                            layoutDetails.visibility = View.VISIBLE
-                            tvStatus.text = data.jobInfo.status.uppercase()
-                            tvCar.text = "${data.jobInfo.make} ${data.jobInfo.model}"
+                            layoutJobDetails.visibility = View.VISIBLE
+                            tvJobStatus.text = data.jobInfo.status.uppercase()
+                            tvJobCar.text = "${data.jobInfo.make} ${data.jobInfo.model}"
                             
                             timeline.clear()
                             timeline.addAll(data.timeline)
