@@ -71,7 +71,8 @@ interface ApiService {
     @FormUrlEncoded
     @POST("api-mobile.php?action=add_vehicle")
     fun addVehicle(
-        @Query("tid") tenantIdQuery: String,
+        @Query("tid") tidQuery: String,
+        @Field("action") actionField: String = "add_vehicle",
         @Field("customer_id") customerId: String,
         @Field("plate_no") plateNo: String,
         @Field("make") make: String,
@@ -117,6 +118,17 @@ interface ApiService {
         @Query("tid") tenantIdQuery: String,
         @Field("customer_id") customerId: String,
         @Field("message") message: String
+    ): Call<BaseResponse>
+
+    @FormUrlEncoded
+    @POST("api-mobile.php?action=record_payment")
+    fun recordPayment(
+        @Query("tid") tenantIdQuery: String,
+        @Field("customer_id") customerId: String,
+        @Field("amount") amount: String,
+        @Field("type") type: String, // DOWNPAYMENT or FULL_PAYMENT
+        @Field("method") method: String,
+        @Field("ref_id") refId: String? = null // appointment_id
     ): Call<BaseResponse>
 
     @FormUrlEncoded
@@ -187,6 +199,7 @@ data class Vehicle(
     val plate_no: String,
     val make: String,
     val model: String,
+    @com.google.gson.annotations.SerializedName("year_model")
     val year: String,
     val last_service_date: String? = null
 )

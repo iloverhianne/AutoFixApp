@@ -182,6 +182,23 @@ class PaymentActivity : AppCompatActivity() {
             override fun onResponse(call: Call<BaseResponse>, response: Response<BaseResponse>) {
                 loadingOverlay.visibility = View.GONE
                 if (response.isSuccessful && response.body()?.status == "success") {
+                    val appointmentId = response.body()?.appointment_id
+                    val paymentMethod = if (rbGcash.isChecked) "GCash" else "Card"
+                    val payType = if (rbDownpayment.isChecked) "DOWNPAYMENT" else "FULL_PAYMENT"
+
+                    // Record payment in background to ensure it reflects on Web Dashboard
+                    apiService.recordPayment(
+                        tenantIdQuery = tid,
+                        customerId = customerId,
+                        amount = String.format("%.2f", amountToPay),
+                        type = payType,
+                        method = paymentMethod,
+                        refId = appointmentId
+                    ).enqueue(object : Callback<BaseResponse> {
+                        override fun onResponse(call: Call<BaseResponse>, r: Response<BaseResponse>) {}
+                        override fun onFailure(call: Call<BaseResponse>, t: Throwable) {}
+                    })
+
                     Toast.makeText(this@PaymentActivity, "Booking successful!", Toast.LENGTH_LONG).show()
 
                     val intent = Intent(this@PaymentActivity, HomeActivity::class.java)

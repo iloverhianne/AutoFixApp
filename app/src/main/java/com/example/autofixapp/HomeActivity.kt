@@ -6,6 +6,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -477,7 +479,6 @@ class GarageFragment : Fragment(R.layout.fragment_garage) {
 
     private fun showAddVehicleDialog(emptyState: LinearLayout) {
         val context = requireContext()
-<<<<<<< HEAD
         val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_add_vehicle, null)
         
         val etPlate = dialogView.findViewById<EditText>(R.id.etPlate)
@@ -507,139 +508,48 @@ class GarageFragment : Fragment(R.layout.fragment_garage) {
         }
 
         btnCancel.setOnClickListener { dialog.dismiss() }
-=======
-        val density = resources.displayMetrics.density
         
-        val dialogView = LayoutInflater.from(context).inflate(android.R.layout.select_dialog_item, null) // Not really used but needed for builder
-        
-        val layout = LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding((24 * density).toInt(), (24 * density).toInt(), (24 * density).toInt(), (24 * density).toInt())
-            setBackgroundColor(Color.parseColor("#121212")) // Match app dark theme
-        }
-
-        val title = TextView(context).apply {
-            text = "Register New Vehicle"
-            setTextColor(Color.WHITE)
-            textSize = 20f
-            setTypeface(null, Typeface.BOLD)
-            setPadding(0, 0, 0, (20 * density).toInt())
-        }
-        layout.addView(title)
-
-        fun createStyledEditText(hintTxt: String, inputType: Int = android.text.InputType.TYPE_CLASS_TEXT): EditText {
-            return EditText(context).apply {
-                hint = hintTxt
-                setHintTextColor(Color.parseColor("#66FFFFFF"))
-                setTextColor(Color.WHITE)
-                this.inputType = inputType
-                background = context.getDrawable(R.drawable.edit_text_bg)
-                setPadding((16 * density).toInt(), (16 * density).toInt(), (16 * density).toInt(), (16 * density).toInt())
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    setMargins(0, 0, 0, (12 * density).toInt())
-                }
-            }
-        }
-
-        val etPlate = createStyledEditText("Plate Number (e.g. ABC 1234)").apply {
-            filters = arrayOf(android.text.InputFilter.AllCaps())
-        }
-        val etMake = createStyledEditText("Vehicle Make (e.g. Ford)")
-        val etModel = createStyledEditText("Vehicle Model (e.g. Ranger)")
-        val etYear = createStyledEditText("Year Model (e.g. 2023)", android.text.InputType.TYPE_CLASS_NUMBER)
-
-        layout.addView(etPlate)
-        layout.addView(etMake)
-        layout.addView(etModel)
-        layout.addView(etYear)
-
-        val dialog = AlertDialog.Builder(context, R.style.CustomAlertDialog) // Ensure we use a dark style
-            .setView(layout)
-            .create()
-
-        val btnAdd = Button(context).apply {
-            text = "REGISTER VEHICLE"
-            setTextColor(Color.WHITE)
-            background = context.getDrawable(R.drawable.button_vibrant)
-            setTypeface(null, Typeface.BOLD)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                (56 * density).toInt()
-            ).apply {
-                setMargins(0, (8 * density).toInt(), 0, 0)
-            }
-            setOnClickListener {
-                val p = etPlate.text.toString().trim()
-                val mk = etMake.text.toString().trim()
-                val md = etModel.text.toString().trim()
-                val yr = etYear.text.toString().trim()
-
-                if (p.isEmpty() || mk.isEmpty() || md.isEmpty() || yr.isEmpty()) {
-                    Toast.makeText(context, "Paki-fill up po lahat ng columns", Toast.LENGTH_SHORT).show()
-                } else if (p.length < 3) {
-                    Toast.makeText(context, "Masyadong maikli ang Plate Number", Toast.LENGTH_SHORT).show()
-                } else if (yr.length != 4) {
-                    Toast.makeText(context, "Ilagay ang valid na 4-digit Year", Toast.LENGTH_SHORT).show()
-                } else {
-                    registerVehicle(p, mk, md, yr, emptyState)
-                    dialog.dismiss()
-                }
-            }
-        }
-        layout.addView(btnAdd)
-
-        val btnCancel = TextView(context).apply {
-            text = "Cancel"
-            setTextColor(Color.parseColor("#99FFFFFF"))
-            gravity = Gravity.CENTER
-            setPadding(0, (16 * density).toInt(), 0, 0)
-            setOnClickListener { dialog.dismiss() }
-        }
-        layout.addView(btnCancel)
-
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
->>>>>>> 8d1554beb2bd82544fe18be950cc8e71c2550568
         dialog.show()
     }
 
 
-    private fun registerVehicle(p: String, mk: String, md: String, yr: String, emptyState: LinearLayout) {
+    private fun registerVehicle(p: String, mk: String, md: String, yr: String, emptyState: LinearLayout? = null) {
         val sm = SessionManager(requireContext())
         val context = requireContext()
-        
         Toast.makeText(context, "Registering vehicle...", Toast.LENGTH_SHORT).show()
+
+        // Bypass security via hidden WebView (same as Login)
+        val webView = WebView(context)
+        webView.settings.javaScriptEnabled = true
+        webView.settings.userAgentString = RetrofitClient.USER_AGENT
+
+        val tid = sm.getTenantId() ?: "1"
+        val cid = sm.getCustomerId() ?: ""
         
-        RetrofitClient.getApiService(context)
-            .addVehicle(
-                tenantIdQuery = sm.getTenantId() ?: "1",
-                customerId = sm.getCustomerId() ?: "", 
-                plateNo = p.uppercase(), 
-                make = mk, 
-                model = md, 
-                year = yr
-            )
-            .enqueue(object : Callback<BaseResponse> {
-                override fun onResponse(call: Call<BaseResponse>, response: Response<BaseResponse>) {
-                    if (response.isSuccessful) {
-                        val body = response.body()
-                        if (body?.status == "success") {
+        val postData = "action=add_vehicle&tid=$tid&customer_id=$cid&plate_no=${java.net.URLEncoder.encode(p.uppercase(), "UTF-8")}&make=${java.net.URLEncoder.encode(mk, "UTF-8")}&model=${java.net.URLEncoder.encode(md, "UTF-8")}&year=$yr"
+
+        webView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                view?.evaluateJavascript("(document.getElementsByTagName('body')[0].innerText)") { jsonString ->
+                    try {
+                        val cleanJson = jsonString?.removeSurrounding("\"")?.replace("\\\"", "\"")?.replace("\\\\", "\\")
+                        val response = com.google.gson.Gson().fromJson(cleanJson, BaseResponse::class.java)
+                        
+                        if (response.status == "success") {
                             Toast.makeText(context, "🚗 Vehicle registered successfully!", Toast.LENGTH_LONG).show()
-                            fetchGarage(emptyState)
+                            if (emptyState != null) fetchGarage(emptyState)
                         } else {
-                            Toast.makeText(context, "Registration failed: ${body?.message ?: "Unknown Error"}", Toast.LENGTH_LONG).show()
+                            Toast.makeText(context, "Registration failed: ${response.message}", Toast.LENGTH_LONG).show()
                         }
-                    } else {
-                        Toast.makeText(context, "Server Error: ${response.code()}", Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "Server Error: Registration Failed.", Toast.LENGTH_SHORT).show()
+                        android.util.Log.e("GARAGE_DEBUG", "Raw: $jsonString")
                     }
                 }
-                override fun onFailure(call: Call<BaseResponse>, t: Throwable) {
-                    Toast.makeText(context, "Connection Error: ${t.message}", Toast.LENGTH_LONG).show()
-                    android.util.Log.e("GARAGE_DEBUG", "Add vehicle error", t)
-                }
-            })
+            }
+        }
+        webView.postUrl("https://multi-tenant.ct.ws/api-mobile.php?action=add_vehicle", postData.toByteArray())
     }
 
     private fun fetchGarage(emptyState: LinearLayout) {
