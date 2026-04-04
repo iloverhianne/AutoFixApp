@@ -4,96 +4,116 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background"
-    android:orientation="vertical"
-    android:padding="0dp">
+    android:background="@color/deep_dark"
+    android:orientation="vertical">
 
     <include layout="@layout/header_brand" />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="20dp"
-        android:text="Appointments &amp; History"
-        android:textColor="@color/text_main"
-        android:textSize="26sp"
-        android:textStyle="bold" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="8dp"
-        android:text="View your previous repairs and payments"
-        android:textColor="@color/text_secondary"
-        android:textSize="14sp" />
-
-    <!-- Tab Toggle -->
-    <RadioGroup
-        android:id="@+id/rgTabs"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="40dp"
-        android:layout_marginHorizontal="20dp"
-        android:layout_marginTop="20dp"
-        android:background="@drawable/edit_text_bg"
-        android:orientation="horizontal"
-        android:padding="2dp">
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="24dp"
+        android:paddingTop="12dp">
 
-        <RadioButton
-            android:id="@+id/rbAppointments"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@drawable/tab_selector"
-            android:button="@null"
-            android:checked="true"
-            android:gravity="center"
-            android:text="Bookings"
-            android:textColor="@color/tab_text_selector"
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Activity &amp; History"
+            android:textColor="@color/white"
+            android:textSize="28sp"
+            android:fontFamily="sans-serif-condensed-medium"
             android:textStyle="bold" />
 
-        <RadioButton
-            android:id="@+id/rbRepairs"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@drawable/tab_selector"
-            android:button="@null"
-            android:checked="false"
-            android:gravity="center"
-            android:text="Services"
-            android:textColor="@color/tab_text_selector"
-            android:textStyle="bold" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Keep track of your garage activity"
+            android:textColor="@color/text_mid"
+            android:textSize="14sp" />
 
-        <RadioButton
-            android:id="@+id/rbPayments"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@drawable/tab_selector"
-            android:button="@null"
-            android:gravity="center"
-            android:text="Payments"
-            android:textColor="@color/tab_text_selector"
-            android:textStyle="bold" />
-    </RadioGroup>
+        <!-- Modern Tab Toggle -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="28dp"
+            app:cardBackgroundColor="@color/surface_dark"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="0dp">
+
+            <RadioGroup
+                android:id="@+id/rgTabs"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:padding="4dp">
+
+                <RadioButton
+                    android:id="@+id/rbAppointments"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@drawable/tab_selector"
+                    android:button="@null"
+                    android:checked="true"
+                    android:gravity="center"
+                    android:text="Bookings"
+                    android:textColor="@color/tab_text_selector"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <RadioButton
+                    android:id="@+id/rbRepairs"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@drawable/tab_selector"
+                    android:button="@null"
+                    android:checked="false"
+                    android:gravity="center"
+                    android:text="Services"
+                    android:textColor="@color/tab_text_selector"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <RadioButton
+                    android:id="@+id/rbPayments"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@drawable/tab_selector"
+                    android:button="@null"
+                    android:gravity="center"
+                    android:text="Payments"
+                    android:textColor="@color/tab_text_selector"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </RadioGroup>
+        </androidx.cardview.widget.CardView>
+    </LinearLayout>
 
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="16dp"
-        android:layout_marginHorizontal="20dp">
+        android:layout_marginTop="12dp"
+        android:paddingHorizontal="20dp"
+        android:clipToPadding="false">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvAppointments"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:paddingBottom="24dp"
+            android:clipToPadding="false"
             tools:listitem="@layout/item_appointment_history" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvHistory"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:paddingBottom="24dp"
+            android:clipToPadding="false"
             android:visibility="gone"
             tools:listitem="@layout/item_history" />
 
@@ -101,6 +121,8 @@
             android:id="@+id/rvPayments"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:paddingBottom="24dp"
+            android:clipToPadding="false"
             android:visibility="gone"
             tools:listitem="@layout/item_payment_history" />
 

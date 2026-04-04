@@ -51,33 +51,34 @@
                 android:layout_height="wrap_content"
                 android:text="Mabuhay, Guest!"
                 android:textColor="@color/white"
-                android:textSize="26sp"
+                android:textSize="32sp"
+                android:fontFamily="sans-serif-condensed-light"
                 android:textStyle="bold" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Ready for a pit stop today?"
+                android:layout_marginTop="2dp"
+                android:text="Your vehicle's best friend is here."
                 android:textColor="@color/text_mid"
-                android:textSize="14sp" />
+                android:textSize="14sp"
+                android:letterSpacing="0.02" />
 
             <!-- Loyalty / Wallet Card -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                app:cardBackgroundColor="@color/card_surface"
-                app:cardCornerRadius="24dp"
-                app:cardElevation="0dp"
-                app:contentPadding="1dp">
+                android:layout_marginTop="28dp"
+                app:cardBackgroundColor="@color/surface_dark"
+                app:cardCornerRadius="28dp"
+                app:cardElevation="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@drawable/card_gradient_bg"
                     android:orientation="vertical"
-                    android:padding="20dp">
+                    android:padding="24dp">
 
                     <RelativeLayout
                         android:layout_width="match_parent"
@@ -86,11 +87,12 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="AUTOFIX LOYALTY"
+                            android:text="LOYALTY REWARDS"
                             android:textColor="@color/text_mid"
-                            android:textSize="10sp"
+                            android:textSize="11sp"
                             android:textAllCaps="true"
-                            android:letterSpacing="0.2" />
+                            android:letterSpacing="0.15"
+                            android:textStyle="bold" />
 
                         <TextView
                             android:id="@+id/tvLoyaltyTier"
@@ -98,7 +100,7 @@
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
                             android:background="@drawable/status_badge_bg"
-                            android:paddingHorizontal="10dp"
+                            android:paddingHorizontal="12dp"
                             android:paddingVertical="4dp"
                             android:text="BRONZE MEMBER"
                             android:textColor="@color/warning_orange"
@@ -109,7 +111,7 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
+                        android:layout_marginTop="12dp"
                         android:gravity="bottom"
                         android:orientation="horizontal">
 
@@ -119,15 +121,16 @@
                             android:layout_height="wrap_content"
                             android:text="0"
                             android:textColor="@color/white"
-                            android:textSize="36sp"
+                            android:textSize="42sp"
+                            android:fontFamily="sans-serif-condensed"
                             android:textStyle="bold" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
-                            android:layout_marginBottom="8dp"
-                            android:text="pts"
+                            android:layout_marginBottom="10dp"
+                            android:text="points"
                             android:textColor="@color/text_mid"
                             android:textSize="14sp" />
                     </LinearLayout>
@@ -135,8 +138,8 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Redeemable for repairs and parts"
+                        android:layout_marginTop="2dp"
+                        android:text="Redeem for free oil change and parts"
                         android:textColor="@color/text_low"
                         android:textSize="12sp" />
 

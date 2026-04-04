@@ -13,7 +13,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingHorizontal="24dp"
-        android:paddingTop="16dp">
+        android:paddingTop="12dp">
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -26,34 +26,43 @@
                 android:text="My Garage"
                 android:textColor="@color/white"
                 android:textSize="28sp"
+                android:fontFamily="sans-serif-condensed-medium"
                 android:textStyle="bold" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Manage your vehicles"
+                android:layout_marginTop="6dp"
+                android:text="Manage your collection"
                 android:textColor="@color/text_mid"
                 android:textSize="14sp" />
         </LinearLayout>
 
-        <ImageButton
+        <androidx.cardview.widget.CardView
             android:id="@+id/btnAddVehicle"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
-            android:background="@drawable/button_vibrant"
-            android:src="@android:drawable/ic_menu_add"
-            app:tint="@color/white" />
+            app:cardBackgroundColor="@color/primary_brand"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="4dp">
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:src="@android:drawable/ic_menu_add"
+                app:tint="@color/white" />
+        </androidx.cardview.widget.CardView>
     </RelativeLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvVehicles"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="28dp"
         android:paddingHorizontal="24dp"
+        android:paddingBottom="40dp"
         android:clipToPadding="false"
         tools:listitem="@layout/item_vehicle" />
 
@@ -63,21 +72,22 @@
         android:layout_height="match_parent"
         android:gravity="center"
         android:orientation="vertical"
-        android:padding="40dp"
+        android:padding="60dp"
         android:visibility="gone">
 
         <ImageView
-            android:layout_width="120dp"
-            android:layout_height="120dp"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:alpha="0.2"
             android:src="@android:drawable/ic_menu_directions"
-            app:tint="@color/border" />
+            app:tint="@color/text_mid" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:text="Your garage is empty"
-            android:textColor="@color/white"
+            android:text="Empty Garage"
+            android:textColor="@color/text_low"
             android:textSize="18sp"
             android:textStyle="bold" />
 
@@ -86,9 +96,9 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:gravity="center"
-            android:text="Add your vehicle to make booking faster and track service history."
-            android:textColor="@color/text_mid"
-            android:textSize="14sp" />
+            android:text="Add your vehicle to start booking services and track history."
+            android:textColor="@color/text_low"
+            android:textSize="13sp" />
     </LinearLayout>
 
 </LinearLayout>
