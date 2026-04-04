@@ -24,15 +24,19 @@ object RetrofitClient {
                 .addInterceptor { chain ->
                     val request = chain.request()
                     val cookieManager = CookieManager.getInstance()
-                    val cookies = cookieManager.getCookie(BASE_URL)
+                    val url = request.url.toString()
+                    val cookies = cookieManager.getCookie(url)
                     
-                    val newRequest = request.newBuilder()
-                        .header("User-Agent", USER_AGENT) // MATCHING USER AGENT
+                    val newRequestBuilder = request.newBuilder()
+                        .header("User-Agent", USER_AGENT)
                         .header("Accept", "application/json")
-                        .header("Cookie", cookies ?: "")
-                        .build()
-                        
-                    chain.proceed(newRequest)
+                        .header("Referer", BASE_URL)
+                    
+                    if (!cookies.isNullOrEmpty()) {
+                        newRequestBuilder.header("Cookie", cookies)
+                    }
+                    
+                    chain.proceed(newRequestBuilder.build())
                 }.build()
 
             val gson = GsonBuilder().setLenient().create()

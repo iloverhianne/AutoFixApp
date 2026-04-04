@@ -57,7 +57,8 @@ interface ApiService {
     @POST("api-mobile.php?action=get_history")
     fun getHistory(
         @Query("tid") tenantIdQuery: String,
-        @Field("customer_id") customerId: String
+        @Field("customer_id") customerId: String,
+        @Query("v") version: String = System.currentTimeMillis().toString()
     ): Call<HistoryResponse>
 
     // 2.5.6 Garage / Vehicle Management
@@ -71,7 +72,8 @@ interface ApiService {
     @FormUrlEncoded
     @POST("api-mobile.php?action=add_vehicle")
     fun addVehicle(
-        @Query("tid") tenantIdQuery: String,
+        @Query("tid") tidQuery: String,
+        @Field("action") actionField: String = "add_vehicle",
         @Field("customer_id") customerId: String,
         @Field("plate_no") plateNo: String,
         @Field("make") make: String,
@@ -120,12 +122,38 @@ interface ApiService {
     ): Call<BaseResponse>
 
     @FormUrlEncoded
+    @POST("api-mobile.php?action=create_payment_intent")
+    fun createPaymentIntent(
+        @Query("tid") tenantIdQuery: String,
+        @Field("customer_id") customerId: String,
+        @Field("amount") amount: String,
+        @Field("type") type: String // DOWNPAYMENT or FULL_PAYMENT
+    ): Call<PaymentIntentResponse>
+
+    @FormUrlEncoded
+    @POST("api-mobile.php?action=record_payment")
+    fun recordPayment(
+        @Query("tid") tenantIdQuery: String,
+        @Field("customer_id") customerId: String,
+        @Field("amount") amount: String,
+        @Field("type") type: String, // DOWNPAYMENT or FULL_PAYMENT
+        @Field("method") method: String,
+        @Field("ref_id") refId: String? = null // appointment_id
+    ): Call<BaseResponse>
+
+    @FormUrlEncoded
     @POST("api-mobile.php?action=get_booked_slots")
     fun getBookedSlots(
         @Query("tid") tenantIdQuery: String,
         @Field("date") date: String
     ): Call<BookedSlotsResponse>
 }
+
+data class PaymentIntentResponse(
+    val status: String,
+    val checkout_url: String,
+    val transaction_id: String
+)
 
 data class BookedSlotsResponse(
     val status: String,
@@ -157,6 +185,7 @@ data class ChatResponse(
 
 data class HistoryResponse(
     val status: String,
+    val message: String? = null,
     val repairs: List<RepairHistory>,
     val payments: List<PaymentHistory>
 )
@@ -187,6 +216,7 @@ data class Vehicle(
     val plate_no: String,
     val make: String,
     val model: String,
+    @com.google.gson.annotations.SerializedName("year_model")
     val year: String,
     val last_service_date: String? = null
 )

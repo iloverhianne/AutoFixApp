@@ -262,29 +262,6 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
     private var servicesList: List<Service> = emptyList()
     private var vehicleList: List<Vehicle> = emptyList()
     private var mechBaysList: List<Pair<Mechanic, Bay>> = emptyList()
-    private val partsList = listOf(
-        "None" to 0.0,
-        "Premium Synthetic Oil (4L)" to 2800.0,
-        "Semi-Synthetic Oil (4L)" to 1800.0,
-        "Regular Motor Oil (4L)" to 1200.0,
-        "Oil Filter (Premium)" to 450.0,
-        "Air Filter (Replacement)" to 750.0,
-        "Cabin Filter (Charcoal)" to 900.0,
-        "Brake Pads (Set)" to 1850.0,
-        "Brake Shoe (Rear)" to 1450.0,
-        "Brake Fluid (500ml)" to 350.0,
-        "Engine Coolant (2L)" to 650.0,
-        "ATF / Transmission Fluid" to 1400.0,
-        "Spark Plugs (Iridium/Set)" to 2400.0,
-        "Wiper Blades (Pair)" to 950.0,
-        "Fuel Filter (Gas/Diesel)" to 1100.0,
-        "Drive Belt / Fan Belt" to 1250.0,
-        "Maintenance Free Battery" to 4800.0,
-        "Wheel Bearing (Front/Rear)" to 2200.0,
-        "Shock Absorber (Front)" to 3800.0,
-        "Stabilizer Link" to 1200.0,
-        "Brake Rotor / Disc" to 2800.0
-    )
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val context = requireContext()
@@ -302,7 +279,6 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
         val spinnerAssignment = view.findViewById<Spinner>(R.id.spinnerAssignment)
         val etDate = view.findViewById<EditText>(R.id.etDate)
         val tvEstimate = view.findViewById<TextView>(R.id.tvEstimate)
-        val tvEstimatedTime = view.findViewById<TextView>(R.id.tvEstimatedTime)
         val btnSubmit = view.findViewById<Button>(R.id.btnSubmitBooking)
 
         // 1. Fetch Stats
@@ -333,17 +309,11 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
             override fun onFailure(call: Call<GarageResponse>, t: Throwable) {}
         })
 
+        // 3. Fetch Services
         api.getServices(tid).enqueue(object : Callback<ServiceResponse> {
             override fun onResponse(call: Call<ServiceResponse>, response: Response<ServiceResponse>) {
                 if (response.isSuccessful) {
-                    // Filter out HAHAHA and Merge hardcoded parts into services list, showing price in name
-                    val apiServices = response.body()?.data?.filter { !it.service_name.contains("HAHAHA", true) } ?: emptyList()
-                    val formattedApi = apiServices.map { s -> Service(s.service_id, "${s.service_name} - ₱${s.price}", s.description, s.price) }
-                    val partsAsServices = partsList.filter { it.first != "None" }.map { p -> 
-                        Service("part_${p.first}", "${p.first} - ₱${p.second.toInt()}", "Service Part", p.second.toString()) 
-                    }
-                    servicesList = formattedApi + partsAsServices
-                    
+                    servicesList = response.body()?.data ?: emptyList()
                     val adapter = ArrayAdapter(context, R.layout.spinner_item, servicesList.map { it.service_name })
                     adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
                     spinnerService.adapter = adapter
@@ -366,14 +336,8 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                         val name = customNames.getOrNull(i) ?: originalM?.full_name ?: "Auto Assign"
                         val m = Mechanic(originalM?.mechanic_id ?: "0", name, originalM?.specialization)
                         
-                        // User specifically asked Keane (previously Bay 1) to be in Bay 3
-                        val bay = when (name) {
-                            "John Benedict" -> body.bays.find { it.bay_name.contains("1") } ?: body.bays.getOrNull(0) ?: Bay("1", "Bay 1")
-                            "Justine Dayao" -> body.bays.find { it.bay_name.contains("2") } ?: body.bays.getOrNull(1) ?: Bay("2", "Bay 2")
-                            "Keane Manaloto" -> body.bays.find { it.bay_name.contains("3") } ?: body.bays.getOrNull(2) ?: Bay("3", "Bay 3")
-                            else -> body.bays.getOrNull(i % body.bays.size) ?: Bay("0", "Any Bay")
-                        }
-                        list.add(m to bay)
+                        val b = body.bays.getOrNull(i % body.bays.size) ?: Bay("0", "Any Bay")
+                        list.add(m to b)
                     }
                     mechBaysList = list
                     val labels = list.map { "${it.second.bay_name} - ${it.first.full_name}" }
@@ -385,51 +349,9 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
             override fun onFailure(call: Call<MechanicsBaysResponse>, t: Throwable) {}
         })
 
-        fun calculateTotal() {
-            val service = servicesList.getOrNull(spinnerService.selectedItemPosition)
-            val servicePrice = service?.price?.toDoubleOrNull() ?: 0.0
-            tvEstimate.text = String.format("₱%.2f", servicePrice)
-
-            // Dynamic duration based on service name or ID
-            val durationMinutes = when {
-                service?.service_id?.startsWith("part_") == true -> 30 
-                service?.service_name?.contains("Oil", true) == true -> 45
-                service?.service_name?.contains("Brake", true) == true -> 60
-                service?.service_name?.contains("Battery", true) == true -> 20
-                service?.service_name?.contains("PMS", true) == true -> 120
-                service?.service_name?.contains("Filter", true) == true -> 15
-                else -> 45
-            }
-
-            val selectedTime = spinnerTime.selectedItem?.toString()
-            if (selectedTime != null) {
-                try {
-                    val sdf = java.text.SimpleDateFormat("h:mm a", java.util.Locale.US)
-                    val date = sdf.parse(selectedTime)
-                    if (date != null) {
-                        val cal = java.util.Calendar.getInstance()
-                        cal.time = date
-                        cal.add(java.util.Calendar.MINUTE, durationMinutes)
-                        tvEstimatedTime.text = "${sdf.format(cal.time)} (${durationMinutes} mins)"
-                    }
-                } catch (e: Exception) {
-                    tvEstimatedTime.text = "Asap"
-                }
-            } else {
-                tvEstimatedTime.text = "--"
-            }
-        }
-
         spinnerService.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
-                calculateTotal()
-            }
-            override fun onNothingSelected(p0: AdapterView<*>?) {}
-        }
-
-        spinnerTime.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
-                calculateTotal()
+                if (servicesList.isNotEmpty()) tvEstimate.text = "₱${servicesList[p2].price}"
             }
             override fun onNothingSelected(p0: AdapterView<*>?) {}
         }
