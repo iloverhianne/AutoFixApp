@@ -18,7 +18,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Track Progress"
+            android:text="@string/track_progress"
             android:textColor="@color/white"
             android:textSize="28sp"
             android:fontFamily="sans-serif-condensed-medium"
@@ -28,7 +28,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:text="Check your vehicle's repair status"
+            android:text="@string/track_subtitle"
             android:textColor="@color/text_mid"
             android:textSize="14sp" />
 
@@ -52,7 +52,8 @@
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:src="@android:drawable/ic_menu_search"
-                    app:tint="@color/text_low" />
+                    app:tint="@color/text_low"
+                    android:contentDescription="@string/desc_icon" />
 
                 <EditText
                     android:id="@+id/etJobId"
@@ -61,11 +62,12 @@
                     android:layout_weight="1"
                     android:layout_marginStart="12dp"
                     android:background="@null"
-                    android:hint="Enter Job ID (e.g., 1001)"
+                    android:hint="@string/hint_job_id"
                     android:inputType="number"
                     android:textColor="@color/white"
                     android:textColorHint="@color/text_low"
-                    android:textSize="15sp" />
+                    android:textSize="15sp"
+                    android:importantForAutofill="no" />
 
                 <androidx.cardview.widget.CardView
                     android:id="@+id/btnTrackRepair"
@@ -73,13 +75,15 @@
                     android:layout_height="40dp"
                     app:cardBackgroundColor="@color/primary_brand"
                     app:cardCornerRadius="20dp"
-                    app:cardElevation="0dp">
+                    app:cardElevation="0dp"
+                    android:clickable="true"
+                    android:focusable="true">
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
                         android:gravity="center"
                         android:paddingHorizontal="20dp"
-                        android:text="TRACK"
+                        android:text="@string/btn_track"
                         android:textColor="@color/white"
                         android:textSize="12sp"
                         android:textStyle="bold" />
@@ -115,13 +119,14 @@
                     android:layout_height="100dp"
                     android:alpha="0.2"
                     android:src="@android:drawable/ic_menu_search"
-                    app:tint="@color/text_mid" />
+                    app:tint="@color/text_mid"
+                    android:contentDescription="@string/no_job_selected" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="24dp"
-                    android:text="No Job Selected"
+                    android:text="@string/no_job_selected"
                     android:textColor="@color/text_low"
                     android:textSize="18sp"
                     android:textStyle="bold" />
@@ -131,7 +136,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:gravity="center"
-                    android:text="Use the tracking ID provided by the shop to see your car's progress."
+                    android:text="@string/no_job_desc"
                     android:textColor="@color/text_low"
                     android:textSize="13sp" />
             </LinearLayout>
@@ -168,7 +173,8 @@
                             android:textColor="@color/white"
                             android:textSize="20sp"
                             android:fontFamily="sans-serif-condensed"
-                            android:textStyle="bold" />
+                            android:textStyle="bold"
+                            tools:text="Vehicle: ABC-1234 (Toyota Vios)" />
 
                         <View 
                             android:layout_width="match_parent"
@@ -186,7 +192,7 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="Status"
+                                android:text="@string/status_label"
                                 android:textColor="@color/text_mid"
                                 android:textSize="13sp" />
 
@@ -200,7 +206,8 @@
                                 android:text="IN PROGRESS"
                                 android:textColor="@color/primary_brand"
                                 android:textSize="10sp"
-                                android:textStyle="bold" />
+                                android:textStyle="bold"
+                                tools:text="IN PROGRESS" />
                         </LinearLayout>
 
                         <LinearLayout
@@ -213,7 +220,7 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="Estimated Service Cost"
+                                android:text="@string/est_cost_label"
                                 android:textColor="@color/text_mid"
                                 android:textSize="13sp" />
 
@@ -224,7 +231,8 @@
                                 android:text="₱1,500.00"
                                 android:textColor="@color/white"
                                 android:textSize="18sp"
-                                android:textStyle="bold" />
+                                android:textStyle="bold"
+                                tools:text="₱1,500.00" />
                         </LinearLayout>
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
@@ -235,7 +243,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="24dp"
                     android:layout_marginTop="32dp"
-                    android:text="Timeline"
+                    android:text="@string/timeline_label"
                     android:textColor="@color/white"
                     android:textSize="20sp"
                     android:fontFamily="sans-serif-condensed"

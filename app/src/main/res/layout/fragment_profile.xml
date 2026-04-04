@@ -27,7 +27,8 @@
                 android:layout_gravity="center"
                 android:alpha="0.6"
                 android:src="@android:drawable/ic_menu_manage"
-                app:tint="@color/primary_brand" />
+                app:tint="@color/primary_brand"
+                android:contentDescription="@string/desc_profile" />
         </androidx.cardview.widget.CardView>
 
         <TextView
@@ -35,7 +36,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:text="Guest User"
+            android:text="@string/welcome_guest"
             android:textColor="@color/white"
             android:textSize="24sp"
             android:fontFamily="sans-serif-condensed"
@@ -47,7 +48,8 @@
             android:layout_marginTop="4dp"
             android:text="autofix.customer@portal.com"
             android:textColor="@color/text_mid"
-            android:textSize="13sp" />
+            android:textSize="13sp"
+            tools:ignore="HardcodedText" />
     </LinearLayout>
 
     <ScrollView
@@ -64,7 +66,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:text="Account Settings"
+                android:text="@string/account_settings"
                 android:textColor="@color/text_mid"
                 android:textSize="11sp"
                 android:textAllCaps="true"
@@ -79,7 +81,9 @@
                 android:layout_marginTop="16dp"
                 app:cardBackgroundColor="@color/card_surface"
                 app:cardCornerRadius="20dp"
-                app:cardElevation="0dp">
+                app:cardElevation="0dp"
+                android:clickable="true"
+                android:focusable="true">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -99,7 +103,8 @@
                             android:layout_height="20dp"
                             android:layout_gravity="center"
                             android:src="@android:drawable/ic_menu_send"
-                            app:tint="@color/accent_cyan" />
+                            app:tint="@color/accent_cyan"
+                            android:contentDescription="@string/desc_icon" />
                     </androidx.cardview.widget.CardView>
 
                     <TextView
@@ -107,7 +112,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="16dp"
                         android:layout_weight="1"
-                        android:text="Chat Support"
+                        android:text="@string/chat_support"
                         android:textColor="@color/white"
                         android:textSize="15sp"
                         android:textStyle="bold" />
@@ -117,7 +122,8 @@
                         android:layout_height="16dp"
                         android:src="@android:drawable/ic_media_play"
                         app:tint="@color/text_low"
-                        android:rotation="0" />
+                        android:rotation="0"
+                        android:contentDescription="@string/desc_icon" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
@@ -129,7 +135,9 @@
                 android:layout_marginTop="12dp"
                 app:cardBackgroundColor="@color/card_surface"
                 app:cardCornerRadius="20dp"
-                app:cardElevation="0dp">
+                app:cardElevation="0dp"
+                android:clickable="true"
+                android:focusable="true">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -149,7 +157,8 @@
                             android:layout_height="20dp"
                             android:layout_gravity="center"
                             android:src="@android:drawable/ic_lock_power_off"
-                            app:tint="@color/error_red" />
+                            app:tint="@color/error_red"
+                            android:contentDescription="@string/desc_icon" />
                     </androidx.cardview.widget.CardView>
 
                     <TextView
@@ -157,7 +166,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="16dp"
                         android:layout_weight="1"
-                        android:text="Logout Session"
+                        android:text="@string/logout_session"
                         android:textColor="@color/error_red"
                         android:textSize="15sp"
                         android:textStyle="bold" />

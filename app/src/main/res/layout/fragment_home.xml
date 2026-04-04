@@ -49,7 +49,7 @@
                 android:id="@+id/tvWelcomeName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Mabuhay, Guest!"
+                android:text="@string/welcome_guest"
                 android:textColor="@color/white"
                 android:textSize="32sp"
                 android:fontFamily="sans-serif-condensed-light"
@@ -59,7 +59,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text="Your vehicle's best friend is here."
+                android:text="@string/welcome_subtitle"
                 android:textColor="@color/text_mid"
                 android:textSize="14sp"
                 android:letterSpacing="0.02" />
@@ -87,7 +87,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="LOYALTY REWARDS"
+                            android:text="@string/loyalty_rewards"
                             android:textColor="@color/text_mid"
                             android:textSize="11sp"
                             android:textAllCaps="true"
@@ -102,7 +102,7 @@
                             android:background="@drawable/status_badge_bg"
                             android:paddingHorizontal="12dp"
                             android:paddingVertical="4dp"
-                            android:text="BRONZE MEMBER"
+                            android:text="@string/bronze_member"
                             android:textColor="@color/warning_orange"
                             android:textSize="10sp"
                             android:textStyle="bold" />
@@ -123,14 +123,15 @@
                             android:textColor="@color/white"
                             android:textSize="42sp"
                             android:fontFamily="sans-serif-condensed"
-                            android:textStyle="bold" />
+                            android:textStyle="bold"
+                            tools:text="0" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
                             android:layout_marginBottom="10dp"
-                            android:text="points"
+                            android:text="@string/points_suffix"
                             android:textColor="@color/text_mid"
                             android:textSize="14sp" />
                     </LinearLayout>
@@ -139,7 +140,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="Redeem for free oil change and parts"
+                        android:text="@string/loyalty_info"
                         android:textColor="@color/text_low"
                         android:textSize="12sp" />
 
@@ -151,7 +152,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="32dp"
-                android:text="Exclusive Promos"
+                android:text="@string/exclusive_promos"
                 android:textColor="@color/white"
                 android:textSize="18sp"
                 android:textStyle="bold" />
@@ -191,7 +192,8 @@
                                 android:text="20% OFF"
                                 android:textColor="@color/primary_brand"
                                 android:textSize="24sp"
-                                android:textStyle="bold" />
+                                android:textStyle="bold"
+                                tools:ignore="HardcodedText" />
 
                             <TextView
                                 android:layout_width="wrap_content"
@@ -199,7 +201,8 @@
                                 android:layout_marginTop="4dp"
                                 android:text="On your first Change Oil service"
                                 android:textColor="@color/white"
-                                android:textSize="14sp" />
+                                android:textSize="14sp"
+                                tools:ignore="HardcodedText" />
                         </LinearLayout>
                     </androidx.cardview.widget.CardView>
 
@@ -224,7 +227,8 @@
                                 android:text="FREE CHECKUP"
                                 android:textColor="@color/accent_cyan"
                                 android:textSize="24sp"
-                                android:textStyle="bold" />
+                                android:textStyle="bold"
+                                tools:ignore="HardcodedText" />
 
                             <TextView
                                 android:layout_width="wrap_content"
@@ -232,7 +236,8 @@
                                 android:layout_marginTop="4dp"
                                 android:text="Weekend special for loyal members"
                                 android:textColor="@color/white"
-                                android:textSize="14sp" />
+                                android:textSize="14sp"
+                                tools:ignore="HardcodedText" />
                         </LinearLayout>
                     </androidx.cardview.widget.CardView>
                 </LinearLayout>
@@ -242,7 +247,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="32dp"
-                android:text="Our Services"
+                android:text="@string/our_services"
                 android:textColor="@color/white"
                 android:textSize="18sp"
                 android:textStyle="bold" />
@@ -268,14 +273,15 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@android:drawable/ic_menu_recent_history"
-                        app:tint="@color/warning_orange" />
+                        app:tint="@color/warning_orange"
+                        android:contentDescription="@string/desc_icon" />
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginStart="12dp"
-                        android:text="Shop Waiting Time:"
+                        android:text="@string/shop_waiting_time"
                         android:textColor="@color/text_mid"
                         android:textSize="14sp" />
 
@@ -283,10 +289,11 @@
                         android:id="@+id/tvHomeWaitTime"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Fetching..."
+                        android:text="@string/fetching"
                         android:textColor="@color/warning_orange"
                         android:textSize="16sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        tools:text="15 mins" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 

@@ -1,3 +1,49 @@
 <resources>
     <string name="app_name">AutoFixApp</string>
+    
+    <!-- Home Tab -->
+    <string name="welcome_guest">Mabuhay, Guest!</string>
+    <string name="welcome_subtitle">Your vehicle\'s best friend is here.</string>
+    <string name="loyalty_rewards">LOYALTY REWARDS</string>
+    <string name="bronze_member">BRONZE MEMBER</string>
+    <string name="points_suffix">points</string>
+    <string name="loyalty_info">Redeem for free oil change and parts</string>
+    <string name="exclusive_promos">Exclusive Promos</string>
+    <string name="our_services">Our Services</string>
+    <string name="shop_waiting_time">Shop Waiting Time:</string>
+    <string name="fetching">Fetching...</string>
+    
+    <!-- History Tab -->
+    <string name="activity_history">Activity &amp; History</string>
+    <string name="history_subtitle">Keep track of your garage activity</string>
+    <string name="tab_bookings">Bookings</string>
+    <string name="tab_services">Services</string>
+    <string name="tab_payments">Payments</string>
+    
+    <!-- Tracking Tab -->
+    <string name="track_progress">Track Progress</string>
+    <string name="track_subtitle">Check your vehicle\'s repair status</string>
+    <string name="btn_track">TRACK</string>
+    <string name="no_job_selected">No Job Selected</string>
+    <string name="no_job_desc">Use the tracking ID provided by the shop to see your car\'s progress.</string>
+    <string name="status_label">Status</string>
+    <string name="est_cost_label">Estimated Service Cost</string>
+    <string name="timeline_label">Timeline</string>
+    <string name="hint_job_id">Enter Job ID (e.g., 1001)</string>
+    
+    <!-- Profile Tab -->
+    <string name="account_settings">Account Settings</string>
+    <string name="chat_support">Chat Support</string>
+    <string name="logout_session">Logout Session</string>
+    
+    <!-- Garage Tab -->
+    <string name="my_garage">My Garage</string>
+    <string name="manage_collection">Manage your collection</string>
+    <string name="empty_garage">Empty Garage</string>
+    <string name="empty_garage_desc">Add your vehicle to start booking services and track history.</string>
+    
+    <!-- Accessibility -->
+    <string name="desc_back">Back</string>
+    <string name="desc_profile">Profile Picture</string>
+    <string name="desc_icon">Icon</string>
 </resources>

@@ -23,7 +23,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="My Garage"
+                android:text="@string/my_garage"
                 android:textColor="@color/white"
                 android:textSize="28sp"
                 android:fontFamily="sans-serif-condensed-medium"
@@ -33,7 +33,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:text="Manage your collection"
+                android:text="@string/manage_collection"
                 android:textColor="@color/text_mid"
                 android:textSize="14sp" />
         </LinearLayout>
@@ -46,13 +46,16 @@
             android:layout_centerVertical="true"
             app:cardBackgroundColor="@color/primary_brand"
             app:cardCornerRadius="14dp"
-            app:cardElevation="4dp">
+            app:cardElevation="4dp"
+            android:clickable="true"
+            android:focusable="true">
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:layout_gravity="center"
                 android:src="@android:drawable/ic_menu_add"
-                app:tint="@color/white" />
+                app:tint="@color/white"
+                android:contentDescription="@string/desc_icon" />
         </androidx.cardview.widget.CardView>
     </RelativeLayout>
 
@@ -80,13 +83,14 @@
             android:layout_height="100dp"
             android:alpha="0.2"
             android:src="@android:drawable/ic_menu_directions"
-            app:tint="@color/text_mid" />
+            app:tint="@color/text_mid"
+            android:contentDescription="@string/desc_icon" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:text="Empty Garage"
+            android:text="@string/empty_garage"
             android:textColor="@color/text_low"
             android:textSize="18sp"
             android:textStyle="bold" />
@@ -96,7 +100,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:gravity="center"
-            android:text="Add your vehicle to start booking services and track history."
+            android:text="@string/empty_garage_desc"
             android:textColor="@color/text_low"
             android:textSize="13sp" />
     </LinearLayout>

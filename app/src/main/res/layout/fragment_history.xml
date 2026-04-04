@@ -19,7 +19,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Activity &amp; History"
+            android:text="@string/activity_history"
             android:textColor="@color/white"
             android:textSize="28sp"
             android:fontFamily="sans-serif-condensed-medium"
@@ -29,7 +29,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:text="Keep track of your garage activity"
+            android:text="@string/history_subtitle"
             android:textColor="@color/text_mid"
             android:textSize="14sp" />
 
@@ -58,7 +58,7 @@
                     android:button="@null"
                     android:checked="true"
                     android:gravity="center"
-                    android:text="Bookings"
+                    android:text="@string/tab_bookings"
                     android:textColor="@color/tab_text_selector"
                     android:textSize="13sp"
                     android:textStyle="bold" />
@@ -72,7 +72,7 @@
                     android:button="@null"
                     android:checked="false"
                     android:gravity="center"
-                    android:text="Services"
+                    android:text="@string/tab_services"
                     android:textColor="@color/tab_text_selector"
                     android:textSize="13sp"
                     android:textStyle="bold" />
@@ -85,7 +85,7 @@
                     android:background="@drawable/tab_selector"
                     android:button="@null"
                     android:gravity="center"
-                    android:text="Payments"
+                    android:text="@string/tab_payments"
                     android:textColor="@color/tab_text_selector"
                     android:textSize="13sp"
                     android:textStyle="bold" />
