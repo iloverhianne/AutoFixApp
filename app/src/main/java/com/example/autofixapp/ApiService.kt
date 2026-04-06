@@ -238,7 +238,7 @@ data class Promo(
 data class RepairHistory(
     val job_id: String,
     val plate_no: String,
-    val status: String,
+    val status: String?,
     val total_amount: String,
     val date: String,
     val rating: Int? = null // For reviews
@@ -246,9 +246,9 @@ data class RepairHistory(
 
 data class PaymentHistory(
     val amount: String,
-    val payment_method: String,
-    val payment_type: String,
-    val status: String,
+    val payment_method: String?,
+    val payment_type: String?,
+    val status: String?,
     val date: String
 )
 

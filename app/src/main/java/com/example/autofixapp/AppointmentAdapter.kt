@@ -28,14 +28,14 @@ class AppointmentAdapter(private var appointments: List<RepairHistory>) :
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val appt = appointments[position]
         holder.tvName.text = "Service for ${appt.plate_no}"
-        holder.tvStatus.text = appt.status.uppercase()
+        holder.tvStatus.text = appt.status?.uppercase() ?: "UNKNOWN"
         holder.tvDate.text = appt.date
         holder.tvAmount.text = "₱${appt.total_amount}"
         
         // Dynamic status colors
         val context = holder.itemView.context
         
-        if (appt.status.equals("COMPLETED", ignoreCase = true)) {
+        if (appt.status?.equals("COMPLETED", ignoreCase = true) == true) {
             holder.btnPay.visibility = View.VISIBLE
             holder.btnPay.setOnClickListener {
                 val intent = Intent(context, PaymentActivity::class.java).apply {
@@ -48,7 +48,7 @@ class AppointmentAdapter(private var appointments: List<RepairHistory>) :
             holder.btnPay.visibility = View.GONE
         }
 
-        when (appt.status.lowercase()) {
+        when (appt.status?.lowercase()) {
             "pending" -> {
                 holder.tvStatus.setTextColor(context.getColor(R.color.status_pending_text))
                 holder.tvStatus.setBackgroundResource(R.drawable.status_badge_bg)

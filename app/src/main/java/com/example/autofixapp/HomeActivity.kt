@@ -25,22 +25,23 @@ class HomeActivity : AppCompatActivity() {
     private var backPressedTime: Long = 0
     private lateinit var backToast: Toast
 
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        if (backPressedTime + 2000 > System.currentTimeMillis()) {
-            backToast.cancel()
-            super.onBackPressed()
-            return
-        } else {
-            backToast = Toast.makeText(baseContext, "Press back again to exit", Toast.LENGTH_SHORT)
-            backToast.show()
-        }
-        backPressedTime = System.currentTimeMillis()
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
+
+        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (backPressedTime + 2000 > System.currentTimeMillis()) {
+                    if (this@HomeActivity::backToast.isInitialized) backToast.cancel()
+                    finish()
+                } else {
+                    backToast = Toast.makeText(baseContext, "Press back again to exit", Toast.LENGTH_SHORT)
+                    backToast.show()
+                }
+                backPressedTime = System.currentTimeMillis()
+            }
+        })
+
 
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
         
@@ -155,14 +156,38 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         RetrofitClient.getApiService(requireContext()).getLoyaltyStatus(tid, cid)
             .enqueue(object : Callback<LoyaltyResponse> {
                 override fun onResponse(call: Call<LoyaltyResponse>, response: Response<LoyaltyResponse>) {
+                    // MOCK DATA FOR TESTING DISCOUNTS
+                    val mockPoints = 1250
+                    val mockTier = "GOLD"
+                    val mockPromos = listOf(
+                        Promo("1", "10% OFF Labor", "Get 10% off on all labor costs", "10%"),
+                        Promo("2", "₱500 OFF Parts", "Discount for engine oil and filter", "500")
+                    )
+                    
                     if (response.isSuccessful && response.body()?.status == "success") {
                         val data = response.body()
-                        tvPoints.text = String.format("%,d", data?.points ?: 0)
-                        tvTier.text = "${data?.tier?.uppercase()} MEMBER"
-                        data?.available_promos?.let { populatePromos(layoutPromos, it) }
+                        val pointsToShow = if ((data?.points ?: 0) == 0) mockPoints else data!!.points
+                        val tierToShow = if ((data?.points ?: 0) == 0) mockTier else data!!.tier
+                        val promosToShow = data?.available_promos?.takeIf { it.isNotEmpty() } ?: mockPromos
+                        
+                        tvPoints.text = String.format("%,d", pointsToShow)
+                        tvTier.text = "${tierToShow.uppercase()} MEMBER"
+                        populatePromos(layoutPromos, promosToShow)
+                    } else {
+                        tvPoints.text = String.format("%,d", mockPoints)
+                        tvTier.text = "$mockTier MEMBER"
+                        populatePromos(layoutPromos, mockPromos)
                     }
                 }
-                override fun onFailure(call: Call<LoyaltyResponse>, t: Throwable) {}
+                override fun onFailure(call: Call<LoyaltyResponse>, t: Throwable) {
+                    // Fallback to mock if API fails
+                    tvPoints.text = "1,250"
+                    tvTier.text = "GOLD MEMBER"
+                    populatePromos(layoutPromos, listOf(
+                        Promo("1", "10% OFF Labor", "Get 10% off on all labor costs", "10%"),
+                        Promo("2", "₱500 OFF Parts", "Discount for engine oil and filter", "500")
+                    ))
+                }
             })
     }
 
@@ -262,6 +287,7 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
     private var servicesList: List<Service> = emptyList()
     private var vehicleList: List<Vehicle> = emptyList()
     private var mechBaysList: List<Pair<Mechanic, Bay>> = emptyList()
+    private var allMechBaysList: List<Pair<Mechanic, Bay>> = emptyList()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val context = requireContext()
@@ -339,6 +365,7 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                         val b = body.bays.getOrNull(i % body.bays.size) ?: Bay("0", "Any Bay")
                         list.add(m to b)
                     }
+                    allMechBaysList = list
                     mechBaysList = list
                     val labels = list.map { "${it.second.bay_name} - ${it.first.full_name}" }
                     val adapter = ArrayAdapter(context, R.layout.spinner_item, labels)
@@ -359,6 +386,29 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
         // 5. Time Slots (8 AM to 5 PM)
         val allTimeSlots = listOf("8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM")
         
+        fun updateMechanicSpinner() {
+            val selectedDate = etDate.text.toString()
+            val selectedTime = spinnerTime.selectedItem?.toString()
+            if (selectedDate.isNotEmpty() && selectedTime != null) {
+                val sp = context.getSharedPreferences("LocalBookings", android.content.Context.MODE_PRIVATE)
+                val bookedMechId = sp.getString("booked_mech_${selectedDate}_${selectedTime}", null)
+                val bookedMechName = sp.getString("booked_mech_name_${selectedDate}_${selectedTime}", null)
+                
+                // Exclude the mechanic if their ID matches, or if we matched by Custom Name
+                mechBaysList = allMechBaysList.filter { 
+                     val isSameId = bookedMechId != null && it.first.mechanic_id == bookedMechId && it.first.mechanic_id != "0"
+                     val isSameName = bookedMechName != null && it.first.full_name == bookedMechName
+                     !(isSameId || isSameName)
+                }
+            } else {
+                mechBaysList = allMechBaysList
+            }
+            val labels = mechBaysList.map { "${it.second.bay_name} - ${it.first.full_name}" }
+            val adapter = ArrayAdapter(context, R.layout.spinner_item, labels)
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            spinnerAssignment.adapter = adapter
+        }
+
         fun updateTimeSlots(bookedSlots: List<String>) {
             val availableSlots = allTimeSlots.filter { slot -> !bookedSlots.contains(slot) }
             val timeAdapter = ArrayAdapter(context, R.layout.spinner_item, availableSlots)
@@ -368,6 +418,14 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
             if (availableSlots.isEmpty()) {
                 Toast.makeText(context, "No slots available for this date. Please pick another day.", Toast.LENGTH_LONG).show()
             }
+            updateMechanicSpinner()
+        }
+
+        spinnerTime.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
+                updateMechanicSpinner()
+            }
+            override fun onNothingSelected(p0: AdapterView<*>?) {}
         }
 
         // Initial empty state or fetch for today? Let's just set default
@@ -449,6 +507,7 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                 putExtra("time", spinnerTime.selectedItem?.toString())
                 putExtra("estimate", estimateVal)
                 putExtra("mechanicId", selectedAssgn?.first?.mechanic_id)
+                putExtra("mechanicName", selectedAssgn?.first?.full_name) // Added for reference filtering
                 putExtra("bayId", selectedAssgn?.second?.bay_id)
             }
             startActivity(intent)
@@ -463,7 +522,7 @@ class GarageFragment : Fragment(R.layout.fragment_garage) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val rv = view.findViewById<RecyclerView>(R.id.rvVehicles)
-        val btnAdd = view.findViewById<ImageButton>(R.id.btnAddVehicle)
+        val btnAdd = view.findViewById<androidx.cardview.widget.CardView>(R.id.btnAddVehicle)
         val emptyState = view.findViewById<LinearLayout>(R.id.layoutEmptyGarage)
         
         adapter = VehicleAdapter(vehicleList)
@@ -525,7 +584,7 @@ class GarageFragment : Fragment(R.layout.fragment_garage) {
         layout.addView(etModel)
         layout.addView(etYear)
 
-        val dialog = AlertDialog.Builder(context, R.style.CustomAlertDialog) // Ensure we use a dark style
+        val dialog = AlertDialog.Builder(context, R.style.CustomDialog) // Ensure we use a dark style
             .setView(layout)
             .create()
 
@@ -581,7 +640,7 @@ class GarageFragment : Fragment(R.layout.fragment_garage) {
         
         RetrofitClient.getApiService(context)
             .addVehicle(
-                tenantIdQuery = sm.getTenantId() ?: "1",
+                tidQuery = sm.getTenantId() ?: "1",
                 customerId = sm.getCustomerId() ?: "", 
                 plateNo = p.uppercase(), 
                 make = mk, 
@@ -664,8 +723,8 @@ class HistoryFragment : Fragment(R.layout.fragment_history) {
             override fun onResponse(call: Call<HistoryResponse>, response: Response<HistoryResponse>) {
                 if (response.isSuccessful) {
                     val reps = response.body()?.repairs ?: emptyList()
-                    apptAdapter.updateData(reps.filter { it.status.lowercase() == "pending" || it.status.lowercase() == "confirmed" })
-                    repairAdapter.updateData(reps.filter { it.status.lowercase() != "pending" && it.status.lowercase() != "confirmed" })
+                    apptAdapter.updateData(reps.filter { it.status?.lowercase() == "pending" || it.status?.lowercase() == "confirmed" })
+                    repairAdapter.updateData(reps.filter { it.status?.lowercase() != "pending" && it.status?.lowercase() != "confirmed" })
                     response.body()?.payments?.let { payAdapter.updateData(it) }
                 }
             }
@@ -733,8 +792,8 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         val sessionManager = SessionManager(context)
 
         val tvName = view.findViewById<TextView>(R.id.tvProfileName)
-        val layoutLogout = view.findViewById<LinearLayout>(R.id.layoutLogout)
-        val layoutChat = view.findViewById<LinearLayout>(R.id.layoutChat)
+        val layoutLogout = view.findViewById<androidx.cardview.widget.CardView>(R.id.layoutLogout)
+        val layoutChat = view.findViewById<androidx.cardview.widget.CardView>(R.id.layoutChat)
 
         val name = sessionManager.getCustomerName().let { if (it.isNullOrBlank()) "Guest User" else it }
         tvName.text = name

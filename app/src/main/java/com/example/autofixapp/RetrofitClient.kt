@@ -16,6 +16,11 @@ object RetrofitClient {
 
     fun getClient(context: Context): Retrofit {
         if (retrofit == null) {
+            // IMPORTANT: Initialize CookieManager synchronously on the Main Thread.
+            // If CookieManager is first called on a background thread (like in the interceptor), 
+            // it can cause a severe WebView/Chromium deadlock that prevents the app from opening!
+            try { CookieManager.getInstance() } catch (ignored: Exception) {}
+
             val client = OkHttpClient.Builder()
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)

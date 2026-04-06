@@ -46,6 +46,7 @@ class PaymentActivity : AppCompatActivity() {
     private var date: String = ""
     private var time: String = ""
     private var mechanicId: String? = null
+    private var mechanicName: String? = null
     private var bayId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,6 +62,7 @@ class PaymentActivity : AppCompatActivity() {
         date = intent.getStringExtra("date") ?: ""
         time = intent.getStringExtra("time") ?: ""
         mechanicId = intent.getStringExtra("mechanicId")
+        mechanicName = intent.getStringExtra("mechanicName")
         bayId = intent.getStringExtra("bayId")
 
         val estimateStr = intent.getStringExtra("estimate") ?: "0.00"
@@ -234,6 +236,13 @@ class PaymentActivity : AppCompatActivity() {
                     val appointmentId = response.body()?.appointment_id
                     val paymentMethod = if (rbGcash.isChecked) "GCash" else "Card"
                     val payType = if (rbDownpayment.isChecked) "DOWNPAYMENT" else "FULL_PAYMENT"
+
+                    // Save booked mechanic locally to filter out in frontend
+                    val sp = getSharedPreferences("LocalBookings", android.content.Context.MODE_PRIVATE)
+                    val editor = sp.edit()
+                    mechanicId?.let { editor.putString("booked_mech_${date}_${time}", it) }
+                    mechanicName?.let { editor.putString("booked_mech_name_${date}_${time}", it) }
+                    editor.apply()
 
                     // Record payment in background to ensure it reflects on Web Dashboard
                     apiService.recordPayment(

@@ -25,15 +25,15 @@ class PaymentHistoryAdapter(private var payments: List<PaymentHistory>) :
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val payment = payments[position]
-        holder.tvMethod.text = payment.payment_method.uppercase()
-        holder.tvStatus.text = payment.status.uppercase()
+        holder.tvMethod.text = payment.payment_method?.uppercase() ?: "UNKNOWN"
+        holder.tvStatus.text = payment.status?.uppercase() ?: "UNKNOWN"
         holder.tvDate.text = payment.date
-        holder.tvType.text = "Type: ${payment.payment_type.uppercase()}"
+        holder.tvType.text = "Type: ${payment.payment_type?.uppercase() ?: "UNKNOWN"}"
         holder.tvAmount.text = "₱${payment.amount}"
 
         // Dynamic status colors
         val context = holder.itemView.context
-        when (payment.status.lowercase()) {
+        when (payment.status?.lowercase() ?: "") {
             "paid", "completed", "success" -> {
                 holder.tvStatus.setTextColor(context.getColor(R.color.status_completed_text))
                 holder.tvStatus.setBackgroundResource(R.drawable.status_success_badge)

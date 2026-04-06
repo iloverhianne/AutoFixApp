@@ -28,12 +28,12 @@ class HistoryAdapter(private var repairs: List<RepairHistory>, private val onIte
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val repair = repairs[position]
         holder.tvName.text = "Job #${repair.job_id} (${repair.plate_no})"
-        holder.tvStatus.text = repair.status.uppercase()
+        holder.tvStatus.text = repair.status?.uppercase() ?: "UNKNOWN"
         holder.tvDate.text = repair.date
         holder.tvAmount.text = "₱${repair.total_amount}"
         
         // Show Pay Button if Status is COMPLETED (Ready for final payment)
-        if (repair.status.equals("COMPLETED", ignoreCase = true)) {
+        if (repair.status?.equals("COMPLETED", ignoreCase = true) == true) {
             holder.btnPay.visibility = View.VISIBLE
             holder.btnPay.setOnClickListener {
                 val context = holder.itemView.context
@@ -49,7 +49,7 @@ class HistoryAdapter(private var repairs: List<RepairHistory>, private val onIte
         
         // Dynamic status colors
         val context = holder.itemView.context
-        when (repair.status.lowercase()) {
+        when (repair.status?.lowercase()) {
             "completed" -> {
                 holder.tvStatus.setTextColor(context.getColor(R.color.status_completed_text))
                 holder.tvStatus.setBackgroundResource(R.drawable.status_success_badge)
