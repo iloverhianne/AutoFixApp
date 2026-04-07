@@ -29,70 +29,59 @@ class MainActivity : AppCompatActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
         sessionManager = SessionManager(this)
         
-        // CHECK SESSION: Skip login if already logged in
-        if (sessionManager.isLoggedIn()) {
-            startActivity(android.content.Intent(this, HomeActivity::class.java))
-            finish()
-            return
-        }
-        
+        // Use a simple splash/loading view while unlocking
         setContentView(R.layout.activity_main)
-
         val etEmail = findViewById<EditText>(R.id.etEmail)
         val etPassword = findViewById<EditText>(R.id.etPassword)
         val btnLogin = findViewById<Button>(R.id.btnLogin)
-
-        // Setup Client
-        val client = OkHttpClient.Builder()
-            .protocols(listOf(Protocol.HTTP_1_1))
-            .retryOnConnectionFailure(true)
-            .addInterceptor { chain ->
-                val request = chain.request()
-                val url = request.url.toString()
-                val cookies = CookieManager.getInstance().getCookie(url)
-                
-                val newRequest = request.newBuilder()
-                    .header("User-Agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Mobile Safari/537.36")
-                    .header("Accept", "application/json")
-                    .header("Cookie", cookies ?: "")
-                    .build()
-                chain.proceed(newRequest)
-            }.build()
-
-        val gson = GsonBuilder().setLenient().create()
-        val retrofit = Retrofit.Builder()
-            .baseUrl("https://multi-tenant.ct.ws/") // FORCE HTTPS
-            .client(client)
-            .addConverterFactory(GsonConverterFactory.create(gson))
-            .build()
-
-        val apiService = retrofit.create(ApiService::class.java)
-
-        // --- QUICK BYPASS UNLOCKER ---
-        val webView = WebView(this)
-        webView.settings.javaScriptEnabled = true
-        webView.settings.domStorageEnabled = true
-        webView.settings.userAgentString = RetrofitClient.USER_AGENT 
         
-        CookieManager.getInstance().setAcceptCookie(true)
-        CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
+        // Hide UI during initial unlock
+        btnLogin.visibility = android.view.View.INVISIBLE
+        etEmail.visibility = android.view.View.INVISIBLE
+        etPassword.visibility = android.view.View.INVISIBLE
 
-        btnLogin.isEnabled = false
-        btnLogin.text = "Unlocking..."
+        // --- ROBUST UNLOCKER (Always runs) ---
+        val bypassWebView = WebView(this)
+        bypassWebView.settings.javaScriptEnabled = true
+        bypassWebView.settings.userAgentString = RetrofitClient.USER_AGENT 
+        
+        val cm = CookieManager.getInstance()
+        cm.setAcceptCookie(true)
+        
+        fun onUnlockComplete() {
+            cm.flush()
+            if (sessionManager.isLoggedIn()) {
+                startActivity(android.content.Intent(this@MainActivity, HomeActivity::class.java))
+                finish()
+            } else {
+                btnLogin.visibility = android.view.View.VISIBLE
+                etEmail.visibility = android.view.View.VISIBLE
+                etPassword.visibility = android.view.View.VISIBLE
+                btnLogin.isEnabled = true
+                btnLogin.text = "LOGIN TO MY ACCOUNT"
+            }
+        }
 
-        // I-load lang natin ng isang beses para makuha niya yung unang __test session cookie
-        webView.loadUrl("https://multi-tenant.ct.ws/api-mobile.php?action=login")
+        bypassWebView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                onUnlockComplete()
+            }
+        }
 
-        // Regardless kung gaano kabilis yung internet, bubuksan niya agad ang button in 1.2 seconds!
+        // Trigger the challenge
+        bypassWebView.loadUrl("https://multi-tenant.ct.ws/api-mobile.php?action=login")
+
+        // Safety timeout
         Handler(Looper.getMainLooper()).postDelayed({
-            btnLogin.isEnabled = true
-            btnLogin.text = "LOGIN TO MY ACCOUNT"
-            CookieManager.getInstance().flush() 
-        }, 1200)
+            if (btnLogin.visibility == android.view.View.INVISIBLE) {
+                onUnlockComplete()
+            }
+        }, 4000)
         // --- END UNLOCKER ---
+
+        // Unlocks happen on start now.
 
         btnLogin.setOnClickListener {
             val email = etEmail.text.toString().trim()
@@ -166,7 +155,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun proceedToDashboard(customerId: String, name: String, email: String, tenantId: String, shopName: String, role: String) {
         sessionManager.saveSession(customerId, name, email, tenantId, shopName, role)
-        Toast.makeText(this, "Welcome to $shopName! ($role)", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, "Welcome to $shopName!", Toast.LENGTH_LONG).show()
+        
+        // Finalize cookies before leaving
+        CookieManager.getInstance().flush()
+        
         val intent = android.content.Intent(this, HomeActivity::class.java)
         intent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)

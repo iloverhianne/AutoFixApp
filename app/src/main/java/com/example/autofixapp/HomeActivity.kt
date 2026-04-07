@@ -261,7 +261,12 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                         }
                     }
                 }
-                override fun onFailure(call: Call<ServiceResponse>, t: Throwable) {}
+                override fun onFailure(call: Call<ServiceResponse>, t: Throwable) {
+                    if (isAdded) {
+                        val msg = if (t.message?.contains("convert") == true) "Format Error (Firewall?)" else t.message
+                        Toast.makeText(context, "Services Error: $msg", Toast.LENGTH_LONG).show()
+                    }
+                }
             })
     }
 
@@ -317,7 +322,9 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                     tvWait.text = b?.waiting_time ?: "-"
                 }
             }
-            override fun onFailure(call: Call<AvailabilityResponse>, t: Throwable) {}
+            override fun onFailure(call: Call<AvailabilityResponse>, t: Throwable) {
+                if (isAdded) Toast.makeText(context, "Availability Info Offline", Toast.LENGTH_SHORT).show()
+            }
         })
 
         // 2. Fetch Garage (Vehicles)
@@ -332,7 +339,9 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                     spinnerVehicle.adapter = adapter
                 }
             }
-            override fun onFailure(call: Call<GarageResponse>, t: Throwable) {}
+            override fun onFailure(call: Call<GarageResponse>, t: Throwable) {
+                if (isAdded) Toast.makeText(context, "Garage Fetch Error: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
         })
 
         // 3. Fetch Services
@@ -372,7 +381,9 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                     }
                 }
             }
-            override fun onFailure(call: Call<ServiceResponse>, t: Throwable) {}
+            override fun onFailure(call: Call<ServiceResponse>, t: Throwable) {
+                if (isAdded) Toast.makeText(context, "Services Fetch Error: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
         })
 
         // 4. Fetch Mechanics & Bays
@@ -709,7 +720,13 @@ class GarageFragment : Fragment(R.layout.fragment_garage) {
                         emptyState.visibility = if (vehicleList.isEmpty()) View.VISIBLE else View.GONE
                     }
                 }
-                override fun onFailure(call: Call<GarageResponse>, t: Throwable) { emptyState.visibility = View.VISIBLE }
+                override fun onFailure(call: Call<GarageResponse>, t: Throwable) { 
+                    if (isAdded) {
+                        emptyState.visibility = View.VISIBLE
+                        val msg = if (t.message?.contains("convert") == true) "Blocked by Firewall" else t.message
+                        Toast.makeText(requireContext(), "Garage Sync Failed: $msg", Toast.LENGTH_LONG).show()
+                    }
+                }
             })
     }
 }
@@ -757,7 +774,9 @@ class HistoryFragment : Fragment(R.layout.fragment_history) {
                     response.body()?.payments?.let { payAdapter.updateData(it) }
                 }
             }
-            override fun onFailure(call: Call<HistoryResponse>, t: Throwable) {}
+            override fun onFailure(call: Call<HistoryResponse>, t: Throwable) {
+                if (isAdded) Toast.makeText(context, "History Sync Failed: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
         })
     }
 }
