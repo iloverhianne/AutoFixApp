@@ -300,7 +300,7 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
         val tvMechs = view.findViewById<TextView>(R.id.tvAvailableMechanics)
         val tvWait = view.findViewById<TextView>(R.id.tvWaitingTime)
         val spinnerVehicle = view.findViewById<Spinner>(R.id.spinnerVehicle)
-        val spinnerService = view.findViewById<Spinner>(R.id.spinnerService)
+        val tvSelectServices = view.findViewById<TextView>(R.id.tvSelectServices)
         val spinnerTime = view.findViewById<Spinner>(R.id.spinnerTime)
         val spinnerAssignment = view.findViewById<Spinner>(R.id.spinnerAssignment)
         val etDate = view.findViewById<EditText>(R.id.etDate)
@@ -336,13 +336,40 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
         })
 
         // 3. Fetch Services
+        var selectedServiceIds = mutableListOf<String>()
+        var selectedServiceNames = mutableListOf<String>()
+
         api.getServices(tid).enqueue(object : Callback<ServiceResponse> {
             override fun onResponse(call: Call<ServiceResponse>, response: Response<ServiceResponse>) {
                 if (response.isSuccessful) {
                     servicesList = response.body()?.data ?: emptyList()
-                    val adapter = ArrayAdapter(context, R.layout.spinner_item, servicesList.map { it.service_name })
-                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-                    spinnerService.adapter = adapter
+                    tvSelectServices.setOnClickListener {
+                        if (servicesList.isEmpty()) return@setOnClickListener
+                        val names = servicesList.map { it.service_name }.toTypedArray()
+                        val checked = BooleanArray(servicesList.size) { i -> selectedServiceIds.contains(servicesList[i].service_id) }
+                        
+                        AlertDialog.Builder(context, R.style.CustomDialog)
+                            .setTitle("Select Services")
+                            .setMultiChoiceItems(names, checked) { _, which, isChecked ->
+                                checked[which] = isChecked
+                            }
+                            .setPositiveButton("Apply") { _, _ ->
+                                selectedServiceIds.clear()
+                                selectedServiceNames.clear()
+                                var total = 0.0
+                                for (i in checked.indices) {
+                                    if (checked[i]) {
+                                        selectedServiceIds.add(servicesList[i].service_id)
+                                        selectedServiceNames.add(servicesList[i].service_name)
+                                        total += servicesList[i].price.toDoubleOrNull() ?: 0.0
+                                    }
+                                }
+                                tvSelectServices.text = if (selectedServiceNames.isEmpty()) "Choose Services..." else selectedServiceNames.joinToString(", ")
+                                tvEstimate.text = String.format("₱%.2f", total)
+                            }
+                            .setNegativeButton("Cancel", null)
+                            .show()
+                    }
                 }
             }
             override fun onFailure(call: Call<ServiceResponse>, t: Throwable) {}
@@ -353,21 +380,21 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
             override fun onResponse(call: Call<MechanicsBaysResponse>, response: Response<MechanicsBaysResponse>) {
                 if (response.isSuccessful && response.body()?.status == "success") {
                     val body = response.body()!!
-                    val customNames = listOf("John Benedict", "Justine Dayao", "Keane Manaloto")
                     val list = mutableListOf<Pair<Mechanic, Bay>>()
                     
-                    val maxSize = maxOf(body.mechanics.size, body.bays.size, 3) 
-                    for (i in 0 until maxSize) {
-                        val originalM = body.mechanics.getOrNull(i)
-                        val name = customNames.getOrNull(i) ?: originalM?.full_name ?: "Auto Assign"
-                        val m = Mechanic(originalM?.mechanic_id ?: "0", name, originalM?.specialization)
-                        
-                        val b = body.bays.getOrNull(i % body.bays.size) ?: Bay("0", "Any Bay")
-                        list.add(m to b)
+                    if (body.mechanics.isNotEmpty()) {
+                        for (i in body.mechanics.indices) {
+                            val m = body.mechanics[i]
+                            val b = body.bays.getOrNull(i % body.bays.size) ?: Bay("0", "Any Bay")
+                            list.add(m to b)
+                        }
+                    } else {
+                        list.add(Mechanic("0", "Auto Assign", "") to Bay("0", "Any Bay"))
                     }
+
                     allMechBaysList = list
                     mechBaysList = list
-                    val labels = list.map { "${it.second.bay_name} - ${it.first.full_name}" }
+                    val labels = list.map { it.first.full_name }
                     val adapter = ArrayAdapter(context, R.layout.spinner_item, labels)
                     adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
                     spinnerAssignment.adapter = adapter
@@ -376,12 +403,7 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
             override fun onFailure(call: Call<MechanicsBaysResponse>, t: Throwable) {}
         })
 
-        spinnerService.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
-                if (servicesList.isNotEmpty()) tvEstimate.text = "₱${servicesList[p2].price}"
-            }
-            override fun onNothingSelected(p0: AdapterView<*>?) {}
-        }
+        // No longer needed: single-service estimate logic
 
         // 5. Time Slots (8 AM to 5 PM)
         val allTimeSlots = listOf("8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM")
@@ -403,7 +425,7 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
             } else {
                 mechBaysList = allMechBaysList
             }
-            val labels = mechBaysList.map { "${it.second.bay_name} - ${it.first.full_name}" }
+            val labels = mechBaysList.map { it.first.full_name }
             val adapter = ArrayAdapter(context, R.layout.spinner_item, labels)
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
             spinnerAssignment.adapter = adapter
@@ -466,17 +488,24 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                 return@setOnClickListener
             }
 
+            // Check if bays are available (from the stats fetched earlier)
+            val availableBays = tvSlots.text.toString().toIntOrNull() ?: 0
+            if (availableBays <= 0) {
+                Toast.makeText(context, "Sorry, all service bays are currently occupied. Please book for a later slot or check back soon.", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+
             if (vehicleList.isEmpty()) {
                 Toast.makeText(context, "Please add a vehicle in your Garage first!", Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
 
             val selectedVehicleId = vehicleList.getOrNull(spinnerVehicle.selectedItemPosition)?.vehicle_id ?: "0"
-            val selectedService = servicesList.getOrNull(spinnerService.selectedItemPosition)
+            val serviceIdsString = selectedServiceIds.joinToString(",")
             val estimateVal = tvEstimate.text.toString().replace("₱", "").trim()
             val selectedAssgn = mechBaysList.getOrNull(spinnerAssignment.selectedItemPosition)
 
-            if (selectedService == null || estimateVal.isEmpty() || estimateVal == "0.00") {
+            if (selectedServiceIds.isEmpty() || estimateVal.isEmpty() || estimateVal == "0.00") {
                 Toast.makeText(context, "Paki-select po muna ng valid service", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
@@ -500,15 +529,15 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
 
             // Direct to Payment Activity
             val intent = Intent(activity, PaymentActivity::class.java).apply {
-                putExtra("serviceId", selectedService.service_id)
-                putExtra("serviceName", selectedService.service_name)
+                putExtra("serviceId", serviceIdsString)
+                putExtra("serviceName", if (selectedServiceNames.size > 1) "Multiple Services" else selectedServiceNames.firstOrNull())
                 putExtra("vehicleId", selectedVehicleId)
                 putExtra("date", etDate.text.toString())
                 putExtra("time", spinnerTime.selectedItem?.toString())
                 putExtra("estimate", estimateVal)
                 putExtra("mechanicId", selectedAssgn?.first?.mechanic_id)
                 putExtra("mechanicName", selectedAssgn?.first?.full_name) // Added for reference filtering
-                putExtra("bayId", selectedAssgn?.second?.bay_id)
+                putExtra("bayId", null as String?) // Bay will be decided by owner/manager
             }
             startActivity(intent)
         }
