@@ -167,7 +167,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     if (response.isSuccessful && response.body()?.status == "success") {
                         val data = response.body()
                         val pointsToShow = if ((data?.points ?: 0) == 0) mockPoints else data!!.points
-                        val tierToShow = if ((data?.points ?: 0) == 0) mockTier else data!!.tier
+                        val tierToShow = (if ((data?.points ?: 0) == 0) mockTier else data?.tier) ?: "BRONZE"
                         val promosToShow = data?.available_promos?.takeIf { it.isNotEmpty() } ?: mockPromos
                         
                         tvPoints.text = String.format("%,d", pointsToShow)
@@ -175,7 +175,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                         populatePromos(layoutPromos, promosToShow)
                     } else {
                         tvPoints.text = String.format("%,d", mockPoints)
-                        tvTier.text = "$mockTier MEMBER"
+                        tvTier.text = "${mockTier.uppercase()} MEMBER"
                         populatePromos(layoutPromos, mockPromos)
                     }
                 }
@@ -334,8 +334,8 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                     vehicleList = response.body()?.data ?: emptyList()
                     val labels = if (vehicleList.isEmpty()) listOf("No vehicles found! Add one in Garage first.") 
                                  else vehicleList.map { "${it.make} ${it.model} (${it.plate_no})" }
-                    val adapter = ArrayAdapter(context, R.layout.spinner_item, labels)
-                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                    val adapter = ArrayAdapter(context, R.layout.spinner_item, android.R.id.text1, labels)
+                    adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
                     spinnerVehicle.adapter = adapter
                 }
             }
@@ -354,30 +354,47 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                     servicesList = response.body()?.data ?: emptyList()
                     tvSelectServices.setOnClickListener {
                         if (servicesList.isEmpty()) return@setOnClickListener
-                        val names = servicesList.map { it.service_name }.toTypedArray()
-                        val checked = BooleanArray(servicesList.size) { i -> selectedServiceIds.contains(servicesList[i].service_id) }
                         
-                        AlertDialog.Builder(context, R.style.CustomDialog)
-                            .setTitle("Select Services")
-                            .setMultiChoiceItems(names, checked) { _, which, isChecked ->
-                                checked[which] = isChecked
-                            }
-                            .setPositiveButton("Apply") { _, _ ->
-                                selectedServiceIds.clear()
-                                selectedServiceNames.clear()
-                                var total = 0.0
-                                for (i in checked.indices) {
-                                    if (checked[i]) {
-                                        selectedServiceIds.add(servicesList[i].service_id)
-                                        selectedServiceNames.add(servicesList[i].service_name)
-                                        total += servicesList[i].price.toDoubleOrNull() ?: 0.0
-                                    }
+                        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_services_select, null)
+                        val rv = dialogView.findViewById<RecyclerView>(R.id.rvServicesSelect)
+                        val btnApply = dialogView.findViewById<Button>(R.id.btnApplyServices)
+                        val btnCancel = dialogView.findViewById<Button>(R.id.btnCancelServices)
+                        
+                        val tempIds = selectedServiceIds.toMutableList()
+                        
+                        rv.layoutManager = LinearLayoutManager(context)
+                        rv.adapter = ServicesSelectAdapter(servicesList, tempIds) { id, isChecked ->
+                            if (isChecked) if (!tempIds.contains(id)) tempIds.add(id) else {}
+                            else tempIds.remove(id)
+                        }
+                        
+                        val dialog = AlertDialog.Builder(context, R.style.CustomDialog)
+                            .setView(dialogView)
+                            .create()
+                            
+                        btnApply.setOnClickListener {
+                            selectedServiceIds.clear()
+                            selectedServiceIds.addAll(tempIds)
+                            selectedServiceNames.clear()
+                            var total = 0.0
+                            for (s in servicesList) {
+                                if (selectedServiceIds.contains(s.service_id)) {
+                                    selectedServiceNames.add(s.service_name)
+                                    total += s.price.toDoubleOrNull() ?: 0.0
                                 }
-                                tvSelectServices.text = if (selectedServiceNames.isEmpty()) "Choose Services..." else selectedServiceNames.joinToString(", ")
-                                tvEstimate.text = String.format("₱%.2f", total)
                             }
-                            .setNegativeButton("Cancel", null)
-                            .show()
+                            tvSelectServices.text = if (selectedServiceNames.isEmpty()) "Choose Services..." else selectedServiceNames.joinToString(", ")
+                            tvEstimate.text = String.format("₱%.2f", total)
+                            dialog.dismiss()
+                        }
+                        
+                        btnCancel.setOnClickListener { dialog.dismiss() }
+                        
+                        dialog.show()
+                        
+                        // Fix squeezed width
+                        val width = (resources.displayMetrics.widthPixels * 0.90).toInt()
+                        dialog.window?.setLayout(width, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
                     }
                 }
             }
@@ -406,8 +423,8 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                     allMechBaysList = list
                     mechBaysList = list
                     val labels = list.map { it.first.full_name }
-                    val adapter = ArrayAdapter(context, R.layout.spinner_item, labels)
-                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                    val adapter = ArrayAdapter(context, R.layout.spinner_item, android.R.id.text1, labels)
+                    adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
                     spinnerAssignment.adapter = adapter
                 }
             }
@@ -437,15 +454,15 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                 mechBaysList = allMechBaysList
             }
             val labels = mechBaysList.map { it.first.full_name }
-            val adapter = ArrayAdapter(context, R.layout.spinner_item, labels)
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            val adapter = ArrayAdapter(context, R.layout.spinner_item, android.R.id.text1, labels)
+            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
             spinnerAssignment.adapter = adapter
         }
 
         fun updateTimeSlots(bookedSlots: List<String>) {
             val availableSlots = allTimeSlots.filter { slot -> !bookedSlots.contains(slot) }
-            val timeAdapter = ArrayAdapter(context, R.layout.spinner_item, availableSlots)
-            timeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            val timeAdapter = ArrayAdapter(context, R.layout.spinner_item, android.R.id.text1, availableSlots)
+            timeAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
             spinnerTime.adapter = timeAdapter
             
             if (availableSlots.isEmpty()) {
@@ -768,10 +785,10 @@ class HistoryFragment : Fragment(R.layout.fragment_history) {
         api.getHistory(sm.getTenantId() ?: "1", customerId = sm.getCustomerId() ?: "").enqueue(object : Callback<HistoryResponse> {
             override fun onResponse(call: Call<HistoryResponse>, response: Response<HistoryResponse>) {
                 if (response.isSuccessful) {
-                    val reps = response.body()?.repairs ?: emptyList()
-                    apptAdapter.updateData(reps.filter { it.status?.lowercase() == "pending" || it.status?.lowercase() == "confirmed" })
-                    repairAdapter.updateData(reps.filter { it.status?.lowercase() != "pending" && it.status?.lowercase() != "confirmed" })
-                    response.body()?.payments?.let { payAdapter.updateData(it) }
+                    val body = response.body()
+                    apptAdapter.updateData(body?.bookings ?: emptyList())
+                    repairAdapter.updateData(body?.services ?: emptyList())
+                    body?.payments?.let { payAdapter.updateData(it) }
                 }
             }
             override fun onFailure(call: Call<HistoryResponse>, t: Throwable) {

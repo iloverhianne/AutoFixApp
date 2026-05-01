@@ -91,6 +91,62 @@
                 android:textSize="16sp"
                 android:textStyle="bold" />
         </LinearLayout>
+
+        <!-- Downpayment Display -->
+        <LinearLayout
+            android:id="@+id/layoutDownpayment"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Downpayment Paid"
+                android:textColor="@color/text_low"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tvHistoryPaid"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="₱0.00"
+                android:textColor="#10b981"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Remaining Balance Display -->
+        <LinearLayout
+            android:id="@+id/layoutBalance"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="12dp"
+            android:gravity="center_vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Remaining Balance"
+                android:textColor="@color/text_low"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tvHistoryBalance"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="₱0.00"
+                android:textColor="#6366f1"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+        </LinearLayout>
         
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnHistoryPay"

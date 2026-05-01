@@ -57,16 +57,30 @@ class PaymentActivity : AppCompatActivity() {
         apiService = RetrofitClient.getApiService(this)
 
         serviceId = intent.getStringExtra("serviceId") ?: ""
-        serviceName = intent.getStringExtra("serviceName") ?: "Unknown"
+        serviceName = intent.getStringExtra("serviceName") ?: "Repair Job"
         vehicleId = intent.getStringExtra("vehicleId") ?: "0"
+        
+        val amountStr = intent.getStringExtra("estimate") ?: intent.getStringExtra("AMOUNT") ?: "0.00"
+        fullAmount = amountStr.toDoubleOrNull() ?: 0.0
+        
         date = intent.getStringExtra("date") ?: ""
         time = intent.getStringExtra("time") ?: ""
         mechanicId = intent.getStringExtra("mechanicId")
         mechanicName = intent.getStringExtra("mechanicName")
         bayId = intent.getStringExtra("bayId")
-
-        val estimateStr = intent.getStringExtra("estimate") ?: "0.00"
-        fullAmount = estimateStr.toDoubleOrNull() ?: 0.0
+        
+        // Check if this is a balance payment for an existing job
+        val existingJobId = intent.getStringExtra("JOB_ID")
+        if (existingJobId != null) {
+            // Already a job, don't allow another downpayment calculation
+            // We are paying the balance now.
+            Handler(Looper.getMainLooper()).postDelayed({
+              rbDownpayment.visibility = View.GONE
+              findViewById<RadioButton>(R.id.rbFullPayment).isChecked = true
+              findViewById<RadioButton>(R.id.rbFullPayment).text = "Balance Payment"
+              updateAmountToPay()
+            }, 100)
+        }
 
         initViews()
         setupListeners()
@@ -203,9 +217,35 @@ class PaymentActivity : AppCompatActivity() {
             .setMessage("Your $typeStr of ₱${String.format("%.2f", amountToPay)} via $paymentMethod via PayMongo was successfully processed.")
             .setCancelable(false)
             .setPositiveButton("Proceed") { _, _ ->
-                bookAppointment()
+                val existingJobId = intent.getStringExtra("JOB_ID")
+                if (existingJobId != null) {
+                    recordBalancePayment(existingJobId)
+                } else {
+                    bookAppointment()
+                }
             }
             .show()
+    }
+
+    private fun recordBalancePayment(jobId: String) {
+        loadingOverlay.visibility = View.VISIBLE
+        val tid = sessionManager.getTenantId() ?: "1"
+        val cid = sessionManager.getCustomerId() ?: ""
+        val method = if (rbGcash.isChecked) "GCash" else "Card"
+        
+        apiService.recordPayment(tid, cid, String.format("%.2f", amountToPay), "BALANCE", method, jobId)
+            .enqueue(object : Callback<BaseResponse> {
+                override fun onResponse(call: Call<BaseResponse>, response: Response<BaseResponse>) {
+                    loadingOverlay.visibility = View.GONE
+                    Toast.makeText(this@PaymentActivity, "Balance payment recorded!", Toast.LENGTH_LONG).show()
+                    finish()
+                }
+                override fun onFailure(call: Call<BaseResponse>, t: Throwable) {
+                    loadingOverlay.visibility = View.GONE
+                    Toast.makeText(this@PaymentActivity, "Payment recorded offline.", Toast.LENGTH_SHORT).show()
+                    finish()
+                }
+            })
     }
 
     private fun bookAppointment() {

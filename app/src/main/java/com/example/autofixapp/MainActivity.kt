@@ -43,6 +43,7 @@ class MainActivity : AppCompatActivity() {
         etPassword.visibility = android.view.View.INVISIBLE
 
         // --- ROBUST UNLOCKER (Always runs) ---
+        var isUnlocking = false
         val bypassWebView = WebView(this)
         bypassWebView.settings.javaScriptEnabled = true
         bypassWebView.settings.userAgentString = RetrofitClient.USER_AGENT 
@@ -51,9 +52,14 @@ class MainActivity : AppCompatActivity() {
         cm.setAcceptCookie(true)
         
         fun onUnlockComplete() {
+            if (isUnlocking) return
+            isUnlocking = true
+            
             cm.flush()
             if (sessionManager.isLoggedIn()) {
-                startActivity(android.content.Intent(this@MainActivity, HomeActivity::class.java))
+                val intent = android.content.Intent(this@MainActivity, HomeActivity::class.java)
+                intent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
                 finish()
             } else {
                 btnLogin.visibility = android.view.View.VISIBLE
@@ -116,6 +122,11 @@ class MainActivity : AppCompatActivity() {
                             
                             val response = com.google.gson.Gson().fromJson(cleanJson, LoginResponse::class.java)
                             
+                            if (response == null) {
+                                Toast.makeText(this@MainActivity, "Invalid Response from Server.", Toast.LENGTH_SHORT).show()
+                                return@evaluateJavascript
+                            }
+
                             if (response.status == "success") {
                                 if (response.shops != null && response.shops.size > 1) {
                                     showShopSelector(response)

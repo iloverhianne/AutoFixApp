@@ -24,8 +24,8 @@ class TimelineAdapter(private var timelineItems: List<TimelineItem>) :
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = timelineItems[position]
-        holder.tvStatus.text = item.status_update.uppercase()
-        holder.tvDate.text = item.created_at
+        holder.tvStatus.text = item.status_update?.uppercase() ?: "UPDATE"
+        holder.tvDate.text = item.created_at ?: "--"
         
         if (item.remarks.isNullOrEmpty()) {
             holder.tvRemarks.visibility = View.GONE
@@ -35,7 +35,7 @@ class TimelineAdapter(private var timelineItems: List<TimelineItem>) :
         }
 
         // Color based on status
-        when (item.status_update.lowercase()) {
+        when (item.status_update?.lowercase() ?: "") {
             "completed" -> holder.tvStatus.setTextColor(Color.parseColor("#03543F"))
             "in progress" -> holder.tvStatus.setTextColor(Color.parseColor("#1E40AF"))
             "pending" -> holder.tvStatus.setTextColor(Color.parseColor("#9CA3AF"))

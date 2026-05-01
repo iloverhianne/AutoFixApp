@@ -17,6 +17,12 @@ class AppointmentAdapter(private var appointments: List<RepairHistory>) :
         val tvDate: TextView = view.findViewById(R.id.tvHistoryDate)
         val tvAmount: TextView = view.findViewById(R.id.tvHistoryAmount)
         val btnPay: MaterialButton = view.findViewById(R.id.btnHistoryPay)
+        
+        // Billing fields
+        val layoutDownpayment: View = view.findViewById(R.id.layoutDownpayment)
+        val tvPaid: TextView = view.findViewById(R.id.tvHistoryPaid)
+        val layoutBalance: View = view.findViewById(R.id.layoutBalance)
+        val tvBalance: TextView = view.findViewById(R.id.tvHistoryBalance)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -27,19 +33,40 @@ class AppointmentAdapter(private var appointments: List<RepairHistory>) :
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val appt = appointments[position]
-        holder.tvName.text = "Service for ${appt.plate_no}"
+        holder.tvName.text = "${appt.service_name ?: "Service"} (${appt.plate_no ?: "N/A"})"
         holder.tvStatus.text = appt.status?.uppercase() ?: "UNKNOWN"
-        holder.tvDate.text = appt.date
-        holder.tvAmount.text = "₱${appt.total_amount}"
+        holder.tvDate.text = appt.date ?: "--"
+        holder.tvAmount.text = "₱${appt.total_amount ?: "0.00"}"
         
+        // Billing Logic
+        val total = appt.total_amount?.toDoubleOrNull() ?: 0.0
+        val paid = appt.paid_amount?.toDoubleOrNull() ?: 0.0
+        val balance = total - paid
+        
+        if (paid > 0) {
+            holder.layoutDownpayment.visibility = View.VISIBLE
+            holder.tvPaid.text = "₱${String.format("%.2f", paid)}"
+            
+            if (balance > 0) {
+                holder.layoutBalance.visibility = View.VISIBLE
+                holder.tvBalance.text = "₱${String.format("%.2f", balance)}"
+            } else {
+                holder.layoutBalance.visibility = View.GONE
+            }
+        } else {
+            holder.layoutDownpayment.visibility = View.GONE
+            holder.layoutBalance.visibility = View.GONE
+        }
+
         // Dynamic status colors
         val context = holder.itemView.context
         
-        if (appt.status?.equals("COMPLETED", ignoreCase = true) == true) {
+        if (appt.status?.equals("COMPLETED", ignoreCase = true) == true && balance > 0) {
             holder.btnPay.visibility = View.VISIBLE
+            holder.btnPay.text = "Pay Remaining Balance"
             holder.btnPay.setOnClickListener {
                 val intent = Intent(context, PaymentActivity::class.java).apply {
-                    putExtra("AMOUNT", appt.total_amount)
+                    putExtra("AMOUNT", String.format("%.2f", balance))
                     putExtra("JOB_ID", appt.job_id)
                 }
                 context.startActivity(intent)

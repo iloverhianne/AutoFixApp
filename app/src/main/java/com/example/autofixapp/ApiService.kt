@@ -174,7 +174,7 @@ data class GarageResponse(
 data class LoyaltyResponse(
     val status: String,
     val points: Int,
-    val tier: String, // Gold, Silver, Bronze
+    val tier: String?, // Gold, Silver, Bronze
     val available_promos: List<Promo>
 )
 
@@ -186,7 +186,9 @@ data class ChatResponse(
 data class HistoryResponse(
     val status: String,
     val message: String? = null,
-    val repairs: List<RepairHistory>,
+    val repairs: List<RepairHistory>, // For backward compatibility
+    val bookings: List<RepairHistory>? = null,
+    val services: List<RepairHistory>? = null,
     val payments: List<PaymentHistory>
 )
 
@@ -204,92 +206,94 @@ data class BaseResponse(
 
 // Entities
 data class Service(
-    val service_id: String,
-    val service_name: String,
-    val description: String,
-    val price: String,
+    val service_id: String?,
+    val service_name: String?,
+    val description: String?,
+    val price: String?,
     val icon_url: String? = null
 )
 
 data class Vehicle(
-    val vehicle_id: String,
-    val plate_no: String,
-    val make: String,
-    val model: String,
+    val vehicle_id: String?,
+    val plate_no: String?,
+    val make: String?,
+    val model: String?,
     @com.google.gson.annotations.SerializedName("year_model")
-    val year: String,
+    val year: String?,
     val last_service_date: String? = null
 )
 
 data class Message(
-    val message_id: String,
-    val sender_type: String, // 'customer' or 'shop'
-    val content: String,
-    val created_at: String
+    val message_id: String?,
+    val sender_type: String?, // 'customer' or 'shop'
+    val content: String?,
+    val created_at: String?
 )
 
 data class Promo(
-    val promo_id: String,
-    val title: String,
-    val description: String,
-    val discount: String
+    val promo_id: String?,
+    val title: String?,
+    val description: String?,
+    val discount: String?
 )
 
 data class RepairHistory(
-    val job_id: String,
-    val plate_no: String,
+    val job_id: String?,
+    val plate_no: String?,
+    val service_name: String? = "General Repair",
     val status: String?,
-    val total_amount: String,
-    val date: String,
+    val total_amount: String?,
+    val paid_amount: String? = "0.00",
+    val date: String?,
     val rating: Int? = null // For reviews
 )
 
 data class PaymentHistory(
-    val amount: String,
+    val amount: String?,
     val payment_method: String?,
     val payment_type: String?,
     val status: String?,
-    val date: String
+    val date: String?
 )
 
 data class JobInfo(
-    val status: String,
-    val total_amount: String,
+    val status: String?,
+    val total_amount: String?,
     val notes: String?,
-    val plate_no: String,
-    val make: String,
-    val model: String
+    val plate_no: String?,
+    val make: String?,
+    val model: String?
 )
 
 data class AvailabilityResponse(
-    val status: String,
-    val available_mechanics: Int,
-    val available_bays: Int,
-    val waiting_time: String,
-    val active_jobs: Int
+    val status: String?,
+    val available_mechanics: Int?,
+    val available_bays: Int?,
+    val waiting_time: String?,
+    val active_jobs: Int?
 )
 
 data class MechanicsBaysResponse(
-    val status: String,
-    val mechanics: List<Mechanic>,
-    val bays: List<Bay>
+    val status: String?,
+    val mechanics: List<Mechanic>?,
+    val bays: List<Bay>?
 )
 
 data class Mechanic(
-    val mechanic_id: String,
-    val full_name: String,
+    val mechanic_id: String?,
+    val full_name: String?,
     val specialization: String?,
     val avatar_url: String? = null
 )
 
 data class Bay(
-    val bay_id: String,
-    val bay_name: String
+    val bay_id: String?,
+    val bay_name: String?
 )
 
 data class TimelineItem(
-    val status_update: String,
+    val status_update: String?,
     val remarks: String?,
-    val created_at: String,
+    val created_at: String?,
     val inspection_photo: String? = null // For visual updates
 )
