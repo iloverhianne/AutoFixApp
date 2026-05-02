@@ -32,34 +32,42 @@ class HomeActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_home)
+        try {
+            setContentView(R.layout.activity_home)
 
-        val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
-        setupBottomNavListener(bottomNav)
-
-        // Handle Back Press
-        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                if (backPressedTime + 2000 > System.currentTimeMillis()) {
-                    backToast.cancel()
-                    finish()
-                } else {
-                    backToast = Toast.makeText(baseContext, "Press back again to exit", Toast.LENGTH_SHORT)
-                    backToast.show()
-                }
-                backPressedTime = System.currentTimeMillis()
+            val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
+            if (bottomNav == null) {
+                Toast.makeText(this, "Home UI Error: BottomNav not found", Toast.LENGTH_LONG).show()
+                return
             }
-        })
+            setupBottomNavListener(bottomNav)
 
-        // Initial Fragment
-        val navigateTo = intent.getStringExtra("NAVIGATE_TO")
-        if (navigateTo == "track") {
-            bottomNav.selectedItemId = R.id.nav_garage
-            loadFragment(TrackingFragment().apply { 
-                arguments = Bundle().apply { putString("JOB_ID", intent.getStringExtra("JOB_ID")) }
+            // Handle Back Press
+            onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (backPressedTime + 2000 > System.currentTimeMillis()) {
+                        if (::backToast.isInitialized) backToast.cancel()
+                        finish()
+                    } else {
+                        backToast = Toast.makeText(baseContext, "Press back again to exit", Toast.LENGTH_SHORT)
+                        backToast.show()
+                    }
+                    backPressedTime = System.currentTimeMillis()
+                }
             })
-        } else {
-            loadFragment(HomeFragment())
+
+            // Initial Fragment
+            val navigateTo = intent.getStringExtra("NAVIGATE_TO")
+            if (navigateTo == "track") {
+                bottomNav.selectedItemId = R.id.nav_garage
+                loadFragment(TrackingFragment().apply { 
+                    arguments = Bundle().apply { putString("JOB_ID", intent.getStringExtra("JOB_ID")) }
+                })
+            } else {
+                loadFragment(HomeFragment())
+            }
+        } catch (e: Exception) {
+            Toast.makeText(this, "Home Error: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
