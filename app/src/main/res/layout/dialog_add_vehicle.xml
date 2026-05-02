@@ -20,10 +20,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Plate Number"
-        android:textColorHint="@color/text_low"
+        android:textColorHint="@color/text_mid"
         app:hintTextColor="@color/primary_brand"
         app:boxStrokeColor="@color/primary_brand"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        app:boxBackgroundColor="@color/card_dark"
+        app:boxBackgroundMode="filled"
+        style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
         android:layout_marginBottom="16dp">
 
         <com.google.android.material.textfield.TextInputEditText
@@ -31,6 +33,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColor="@color/white"
+            android:padding="16dp"
             android:inputType="textCapCharacters" />
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -38,10 +41,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Make (e.g. Toyota)"
-        android:textColorHint="@color/text_low"
+        android:textColorHint="@color/text_mid"
         app:hintTextColor="@color/primary_brand"
         app:boxStrokeColor="@color/primary_brand"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        app:boxBackgroundColor="@color/card_dark"
+        app:boxBackgroundMode="filled"
+        style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
         android:layout_marginBottom="16dp">
 
         <com.google.android.material.textfield.TextInputEditText
@@ -49,6 +54,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColor="@color/white"
+            android:padding="16dp"
             android:inputType="textCapWords" />
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -56,10 +62,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Model (e.g. Vios)"
-        android:textColorHint="@color/text_low"
+        android:textColorHint="@color/text_mid"
         app:hintTextColor="@color/primary_brand"
         app:boxStrokeColor="@color/primary_brand"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        app:boxBackgroundColor="@color/card_dark"
+        app:boxBackgroundMode="filled"
+        style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
         android:layout_marginBottom="16dp">
 
         <com.google.android.material.textfield.TextInputEditText
@@ -67,6 +75,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColor="@color/white"
+            android:padding="16dp"
             android:inputType="textCapWords" />
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -74,10 +83,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Year (e.g. 2022)"
-        android:textColorHint="@color/text_low"
+        android:textColorHint="@color/text_mid"
         app:hintTextColor="@color/primary_brand"
         app:boxStrokeColor="@color/primary_brand"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        app:boxBackgroundColor="@color/card_dark"
+        app:boxBackgroundMode="filled"
+        style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
         android:layout_marginBottom="24dp">
 
         <com.google.android.material.textfield.TextInputEditText
@@ -85,6 +96,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColor="@color/white"
+            android:padding="16dp"
             android:inputType="number" />
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -102,14 +114,18 @@
             android:text="Cancel"
             android:textColor="@color/primary_brand" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnAdd"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:backgroundTint="@color/primary_brand"
-            android:text="Add"
-            android:textColor="@color/white" />
+            android:layout_marginStart="12dp"
+            app:backgroundTint="@color/primary_brand"
+            app:cornerRadius="12dp"
+            android:text="Add Vehicle"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            app:rippleColor="@color/white" />
     </LinearLayout>
 
 </LinearLayout>

@@ -15,6 +15,7 @@ class PaymentHistoryAdapter(private var payments: List<PaymentHistory>) :
         val tvDate: TextView = view.findViewById(R.id.tvPaymentDate)
         val tvType: TextView = view.findViewById(R.id.tvPaymentType)
         val tvAmount: TextView = view.findViewById(R.id.tvPaymentAmount)
+        val tvDetails: TextView = view.findViewById(R.id.tvPaymentDetails)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -30,6 +31,13 @@ class PaymentHistoryAdapter(private var payments: List<PaymentHistory>) :
         holder.tvDate.text = payment.date ?: "--"
         holder.tvType.text = "Type: ${payment.payment_type?.uppercase() ?: "UNKNOWN"}"
         holder.tvAmount.text = "₱${payment.amount ?: "0.00"}"
+
+        if (!payment.plate_no.isNullOrEmpty() || !payment.service_name.isNullOrEmpty()) {
+            holder.tvDetails.visibility = View.VISIBLE
+            holder.tvDetails.text = "${payment.plate_no ?: ""} • ${payment.service_name ?: ""}"
+        } else {
+            holder.tvDetails.visibility = View.GONE
+        }
 
         // Dynamic status colors
         val context = holder.itemView.context

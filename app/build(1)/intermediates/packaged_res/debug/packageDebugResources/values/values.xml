@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="accent">@color/accent_cyan</color>
+    <color name="accent_cyan">#06B6D4</color>
+    <color name="background">@color/deep_dark</color>
+    <color name="black">#FF000000</color>
+    <color name="border">#374151</color>
+    <color name="card_dark">#1F2937</color>
+    <color name="card_outline">#374151</color>
+    <color name="card_surface">#1F2937</color>
+    <color name="deep_dark">#080C14</color>
+    <color name="error_red">#EF4444</color>
+    <color name="glass_border">#1AFFFFFF</color>
+    <color name="glass_white">#0DFFFFFF</color>
+    <color name="gradient_end">#059669</color>
+    <color name="gradient_start">#10B981</color>
+    <color name="input_dark">@color/card_dark</color>
+    <color name="primary">@color/primary_brand</color>
+    <color name="primary_brand">#10B981</color>
+    <color name="primary_soft">#34D399</color>
+    <color name="status_active_bg">#1A1E3A8A</color>
+    <color name="status_active_text">#3B82F6</color>
+    <color name="status_cancelled_bg">#1A450A0A</color>
+    <color name="status_cancelled_text">#EF4444</color>
+    <color name="status_completed_bg">#1A064E3B</color>
+    <color name="status_completed_text">#10B981</color>
+    <color name="status_pending_bg">#1A3B2001</color>
+    <color name="status_pending_text">#F59E0B</color>
+    <color name="surface">@color/surface_dark</color>
+    <color name="surface_dark">#111827</color>
+    <color name="text_high">#F9FAFB</color>
+    <color name="text_hint">@color/text_low</color>
+    <color name="text_low">#6B7280</color>
+    <color name="text_main">@color/text_high</color>
+    <color name="text_mid">#9CA3AF</color>
+    <color name="text_secondary">@color/text_mid</color>
+    <color name="vibrant_purple">@color/primary_brand</color>
+    <color name="warning_orange">#F59E0B</color>
+    <color name="white">#FFFFFF</color>
+    <string name="account_settings">Account Settings</string>
+    <string name="activity_history">Activity &amp; History</string>
+    <string name="app_name">AutoFixApp</string>
+    <string name="bronze_member">BRONZE MEMBER</string>
+    <string name="btn_track">TRACK</string>
+    <string name="chat_support">Chat Support</string>
+    <string name="desc_back">Back</string>
+    <string name="desc_icon">Icon</string>
+    <string name="desc_profile">Profile Picture</string>
+    <string name="empty_garage">Empty Garage</string>
+    <string name="empty_garage_desc">Add your vehicle to start booking services and track history.</string>
+    <string name="est_cost_label">Estimated Service Cost</string>
+    <string name="exclusive_promos">Exclusive Promos</string>
+    <string name="fetching">Fetching...</string>
+    <string name="hint_job_id">Enter Job ID (e.g., 1001)</string>
+    <string name="history_subtitle">Keep track of your garage activity</string>
+    <string name="logout_session">Logout Session</string>
+    <string name="loyalty_info">Redeem for free oil change and parts</string>
+    <string name="loyalty_rewards">LOYALTY REWARDS</string>
+    <string name="manage_collection">Manage your collection</string>
+    <string name="my_garage">My Garage</string>
+    <string name="no_job_desc">Use the tracking ID provided by the shop to see your car\'s progress.</string>
+    <string name="no_job_selected">No Job Selected</string>
+    <string name="our_services">Our Services</string>
+    <string name="points_suffix">points</string>
+    <string name="shop_waiting_time">Shop Waiting Time:</string>
+    <string name="status_label">Status</string>
+    <string name="tab_bookings">Bookings</string>
+    <string name="tab_payments">Payments</string>
+    <string name="tab_services">Services</string>
+    <string name="timeline_label">Timeline</string>
+    <string name="track_progress">Track Progress</string>
+    <string name="track_subtitle">Check your vehicle\'s repair status</string>
+    <string name="welcome_guest">Mabuhay, Guest!</string>
+    <string name="welcome_subtitle">Your vehicle\'s best friend is here.</string>
+    <style name="Base.Theme.AutoFixApp" parent="Theme.Material3.DayNight.NoActionBar">
+        
+        
+    </style>
+    <style name="CustomDialog" parent="Theme.Material3.Dark.Dialog">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowFrame">@null</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+    <style name="Theme.AutoFixApp" parent="Base.Theme.AutoFixApp"/>
+</resources>

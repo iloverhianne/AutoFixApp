@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="8dp">
+
+    <!-- Timeline Indicator Left -->
+    <LinearLayout
+        android:layout_width="40dp"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
+
+        <View
+            android:layout_width="2dp"
+            android:layout_height="10dp"
+            android:background="@color/border" />
+
+        <View
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:background="@drawable/bg_circle_blue" /> <!-- Background drawable, I'll use simple circular shape or just a simple view -->
+
+        <View
+            android:layout_width="2dp"
+            android:layout_height="match_parent"
+            android:background="@color/border" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="8dp"
+        android:background="@drawable/card_bg"
+        android:layout_marginStart="8dp"
+        android:elevation="2dp"
+        android:layout_marginEnd="4dp"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:id="@+id/tvTimelineStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="In Progress"
+            android:textStyle="bold"
+            android:textColor="@color/text_main"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/tvTimelineDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="2023-11-01 10:00 AM"
+            android:textColor="@color/text_hint"
+            android:textSize="12sp"
+            android:layout_marginTop="2dp" />
+
+        <TextView
+            android:id="@+id/tvTimelineRemarks"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Mechanic note: Replacing parts."
+            android:textColor="@color/text_main"
+            android:layout_marginTop="4dp"
+            android:textSize="14sp" />
+
+    </LinearLayout>
+
+</LinearLayout>

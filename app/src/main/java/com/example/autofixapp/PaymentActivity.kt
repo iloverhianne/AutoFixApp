@@ -61,7 +61,9 @@ class PaymentActivity : AppCompatActivity() {
         vehicleId = intent.getStringExtra("vehicleId") ?: "0"
         
         val amountStr = intent.getStringExtra("estimate") ?: intent.getStringExtra("AMOUNT") ?: "0.00"
-        fullAmount = amountStr.toDoubleOrNull() ?: 0.0
+        // Remove currency symbols and commas for safe parsing
+        val cleanAmount = amountStr.replace("₱", "").replace(",", "").trim()
+        fullAmount = cleanAmount.toDoubleOrNull() ?: 0.0
         
         date = intent.getStringExtra("date") ?: ""
         time = intent.getStringExtra("time") ?: ""
@@ -146,7 +148,7 @@ class PaymentActivity : AppCompatActivity() {
         val webView = android.webkit.WebView(this)
         webView.settings.javaScriptEnabled = true
         
-        val dialog = AlertDialog.Builder(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+        val dialog = AlertDialog.Builder(this)
             .setView(webView)
             .setCancelable(false)
             .create()

@@ -1,0 +1,254 @@
+[
+    {
+        "merged": "com.example.autofixapp-debug-36:/drawable_bg_circle_blue.xml.flat",
+        "source": "com.example.autofixapp-main-38:/drawable/bg_circle_blue.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/layout_spinner_dropdown_item.xml.flat",
+        "source": "com.example.autofixapp-main-38:/layout/spinner_dropdown_item.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/layout_fragment_booking.xml.flat",
+        "source": "com.example.autofixapp-main-38:/layout/fragment_booking.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/xml_backup_rules.xml.flat",
+        "source": "com.example.autofixapp-main-38:/xml/backup_rules.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/drawable_btn_rounded.xml.flat",
+        "source": "com.example.autofixapp-main-38:/drawable/btn_rounded.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/layout_item_timeline.xml.flat",
+        "source": "com.example.autofixapp-main-38:/layout/item_timeline.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/drawable_card_bg.xml.flat",
+        "source": "com.example.autofixapp-main-38:/drawable/card_bg.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/drawable_status_badge_bg.xml.flat",
+        "source": "com.example.autofixapp-main-38:/drawable/status_badge_bg.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/layout_activity_history_detail.xml.flat",
+        "source": "com.example.autofixapp-main-38:/layout/activity_history_detail.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/mipmap-xxxhdpi_ic_launcher_round.webp.flat",
+        "source": "com.example.autofixapp-main-38:/mipmap-xxxhdpi/ic_launcher_round.webp"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/mipmap-xhdpi_ic_launcher_round.webp.flat",
+        "source": "com.example.autofixapp-main-38:/mipmap-xhdpi/ic_launcher_round.webp"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/layout_spinner_item.xml.flat",
+        "source": "com.example.autofixapp-main-38:/layout/spinner_item.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/drawable_spinner_bg.xml.flat",
+        "source": "com.example.autofixapp-main-38:/drawable/spinner_bg.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/layout_item_service_select.xml.flat",
+        "source": "com.example.autofixapp-main-38:/layout/item_service_select.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/layout_fragment_garage.xml.flat",
+        "source": "com.example.autofixapp-main-38:/layout/fragment_garage.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/drawable_edit_text_premium.xml.flat",
+        "source": "com.example.autofixapp-main-38:/drawable/edit_text_premium.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/drawable_ic_mechanic_placeholder.xml.flat",
+        "source": "com.example.autofixapp-main-38:/drawable/ic_mechanic_placeholder.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/layout_dialog_add_vehicle.xml.flat",
+        "source": "com.example.autofixapp-main-38:/layout/dialog_add_vehicle.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/drawable_card_gradient_bg.xml.flat",
+        "source": "com.example.autofixapp-main-38:/drawable/card_gradient_bg.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/layout_activity_payment.xml.flat",
+        "source": "com.example.autofixapp-main-38:/layout/activity_payment.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/layout_fragment_tracking.xml.flat",
+        "source": "com.example.autofixapp-main-38:/layout/fragment_tracking.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/drawable_glass_container.xml.flat",
+        "source": "com.example.autofixapp-main-38:/drawable/glass_container.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/drawable_scrollbar_thumb.xml.flat",
+        "source": "com.example.autofixapp-main-38:/drawable/scrollbar_thumb.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/mipmap-hdpi_ic_launcher_round.webp.flat",
+        "source": "com.example.autofixapp-main-38:/mipmap-hdpi/ic_launcher_round.webp"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/layout_activity_booking_confirmation.xml.flat",
+        "source": "com.example.autofixapp-main-38:/layout/activity_booking_confirmation.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/menu_bottom_nav_menu.xml.flat",
+        "source": "com.example.autofixapp-main-38:/menu/bottom_nav_menu.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/color_tab_text_selector.xml.flat",
+        "source": "com.example.autofixapp-main-38:/color/tab_text_selector.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/mipmap-anydpi_ic_launcher.xml.flat",
+        "source": "com.example.autofixapp-main-38:/mipmap-anydpi/ic_launcher.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/layout_fragment_chat.xml.flat",
+        "source": "com.example.autofixapp-main-38:/layout/fragment_chat.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/layout_activity_payment_status.xml.flat",
+        "source": "com.example.autofixapp-main-38:/layout/activity_payment_status.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/layout_fragment_home.xml.flat",
+        "source": "com.example.autofixapp-main-38:/layout/fragment_home.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/drawable_status_danger_badge.xml.flat",
+        "source": "com.example.autofixapp-main-38:/drawable/status_danger_badge.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/mipmap-xxxhdpi_ic_launcher.webp.flat",
+        "source": "com.example.autofixapp-main-38:/mipmap-xxxhdpi/ic_launcher.webp"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/xml_data_extraction_rules.xml.flat",
+        "source": "com.example.autofixapp-main-38:/xml/data_extraction_rules.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/layout_activity_home.xml.flat",
+        "source": "com.example.autofixapp-main-38:/layout/activity_home.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.example.autofixapp-main-38:/drawable/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/layout_fragment_history.xml.flat",
+        "source": "com.example.autofixapp-main-38:/layout/fragment_history.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/drawable_edit_text_bg.xml.flat",
+        "source": "com.example.autofixapp-main-38:/drawable/edit_text_bg.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/drawable_ic_back_arrow.xml.flat",
+        "source": "com.example.autofixapp-main-38:/drawable/ic_back_arrow.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/drawable_status_success_badge.xml.flat",
+        "source": "com.example.autofixapp-main-38:/drawable/status_success_badge.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/drawable_tab_selector.xml.flat",
+        "source": "com.example.autofixapp-main-38:/drawable/tab_selector.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/layout_fragment_profile.xml.flat",
+        "source": "com.example.autofixapp-main-38:/layout/fragment_profile.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/mipmap-mdpi_ic_launcher.webp.flat",
+        "source": "com.example.autofixapp-main-38:/mipmap-mdpi/ic_launcher.webp"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/drawable_ic_caret_down.xml.flat",
+        "source": "com.example.autofixapp-main-38:/drawable/ic_caret_down.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/mipmap-xhdpi_ic_launcher.webp.flat",
+        "source": "com.example.autofixapp-main-38:/mipmap-xhdpi/ic_launcher.webp"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/layout_item_history.xml.flat",
+        "source": "com.example.autofixapp-main-38:/layout/item_history.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/mipmap-xxhdpi_ic_launcher_round.webp.flat",
+        "source": "com.example.autofixapp-main-38:/mipmap-xxhdpi/ic_launcher_round.webp"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/mipmap-xxhdpi_ic_launcher.webp.flat",
+        "source": "com.example.autofixapp-main-38:/mipmap-xxhdpi/ic_launcher.webp"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/drawable_ic_launcher_background.xml.flat",
+        "source": "com.example.autofixapp-main-38:/drawable/ic_launcher_background.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/layout_item_payment_history.xml.flat",
+        "source": "com.example.autofixapp-main-38:/layout/item_payment_history.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/drawable_premium_gradient.xml.flat",
+        "source": "com.example.autofixapp-main-38:/drawable/premium_gradient.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/layout_item_vehicle.xml.flat",
+        "source": "com.example.autofixapp-main-38:/layout/item_vehicle.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/layout_activity_main.xml.flat",
+        "source": "com.example.autofixapp-main-38:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/drawable_status_active_badge.xml.flat",
+        "source": "com.example.autofixapp-main-38:/drawable/status_active_badge.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/layout_item_service_row.xml.flat",
+        "source": "com.example.autofixapp-main-38:/layout/item_service_row.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/layout_dialog_services_select.xml.flat",
+        "source": "com.example.autofixapp-main-38:/layout/dialog_services_select.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/layout_item_appointment_history.xml.flat",
+        "source": "com.example.autofixapp-main-38:/layout/item_appointment_history.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/drawable_ic_clock.xml.flat",
+        "source": "com.example.autofixapp-main-38:/drawable/ic_clock.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/mipmap-anydpi_ic_launcher_round.xml.flat",
+        "source": "com.example.autofixapp-main-38:/mipmap-anydpi/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/mipmap-hdpi_ic_launcher.webp.flat",
+        "source": "com.example.autofixapp-main-38:/mipmap-hdpi/ic_launcher.webp"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/layout_header_brand.xml.flat",
+        "source": "com.example.autofixapp-main-38:/layout/header_brand.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/drawable_button_vibrant.xml.flat",
+        "source": "com.example.autofixapp-main-38:/drawable/button_vibrant.xml"
+    },
+    {
+        "merged": "com.example.autofixapp-debug-36:/mipmap-mdpi_ic_launcher_round.webp.flat",
+        "source": "com.example.autofixapp-main-38:/mipmap-mdpi/ic_launcher_round.webp"
+    }
+]

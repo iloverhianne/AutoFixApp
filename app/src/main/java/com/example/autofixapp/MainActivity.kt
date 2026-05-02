@@ -29,40 +29,38 @@ class MainActivity : AppCompatActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        sessionManager = SessionManager(this)
+        
+        // 1. Set layout immediately to avoid black screen
         setContentView(R.layout.activity_main)
+        
+        // 2. Initialize essentials
+        try { CookieManager.getInstance() } catch (e: Exception) {}
+        sessionManager = SessionManager(this)
 
-        // Session Check
-        if (sessionManager.isLoggedIn()) {
-            val intent = android.content.Intent(this, HomeActivity::class.java)
-            intent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(intent)
-            finish()
-            return
-        }
-
+        // 3. Handle views
         val etEmail = findViewById<EditText>(R.id.etEmail)
         val etPassword = findViewById<EditText>(R.id.etPassword)
         val btnLogin = findViewById<Button>(R.id.btnLogin)
         
+        // 4. Session Check (with slight delay to allow UI to breathe)
+        if (sessionManager.isLoggedIn()) {
+            Handler(Looper.getMainLooper()).postDelayed({
+                val intent = android.content.Intent(this, HomeActivity::class.java)
+                intent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
+                finish()
+            }, 100)
+            return
+        }
+
         btnLogin.visibility = android.view.View.VISIBLE
         etEmail.visibility = android.view.View.VISIBLE
         etPassword.visibility = android.view.View.VISIBLE
         btnLogin.isEnabled = true
         btnLogin.text = "LOGIN TO MY ACCOUNT"
 
-        // --- STEALTH UNLOCKER ---
-        // Runs in the background to handle the firewall challenge silently
-        val stealthWebView = WebView(this)
-        stealthWebView.settings.javaScriptEnabled = true
-        stealthWebView.settings.userAgentString = RetrofitClient.USER_AGENT
-        stealthWebView.webViewClient = object : WebViewClient() {
-            override fun onPageFinished(view: WebView?, url: String?) {
-                android.util.Log.d("UNLOCKER", "Background challenge cleared")
-            }
-        }
-        stealthWebView.loadUrl("https://multi-tenant.ct.ws/api-mobile.php?action=login")
-        // --- END UNLOCKER ---
+        // Removed Stealth Unlocker from startup to prevent memory hang
+        // We will trigger it only if login fails with 403.
 
         btnLogin.setOnClickListener {
             val email = etEmail.text.toString().trim()

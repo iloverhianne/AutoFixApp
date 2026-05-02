@@ -12,77 +12,40 @@ class AppointmentAdapter(private var appointments: List<RepairHistory>) :
     RecyclerView.Adapter<AppointmentAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val tvName: TextView = view.findViewById(R.id.tvHistoryServiceName)
-        val tvStatus: TextView = view.findViewById(R.id.tvHistoryStatus)
-        val tvDate: TextView = view.findViewById(R.id.tvHistoryDate)
-        val tvAmount: TextView = view.findViewById(R.id.tvHistoryAmount)
-        val btnPay: MaterialButton = view.findViewById(R.id.btnHistoryPay)
-        
-        // Billing fields
-        val layoutDownpayment: View = view.findViewById(R.id.layoutDownpayment)
-        val tvPaid: TextView = view.findViewById(R.id.tvHistoryPaid)
-        val layoutBalance: View = view.findViewById(R.id.layoutBalance)
-        val tvBalance: TextView = view.findViewById(R.id.tvHistoryBalance)
+        val tvName: TextView = view.findViewById(R.id.tvApptServiceName)
+        val tvStatus: TextView = view.findViewById(R.id.tvApptStatus)
+        val tvDate: TextView = view.findViewById(R.id.tvApptDate)
+        val tvTime: TextView = view.findViewById(R.id.tvApptTime)
+        val tvEstimate: TextView = view.findViewById(R.id.tvApptEstimate)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_history, parent, false)
+            .inflate(R.layout.item_appointment_history, parent, false)
         return ViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val appt = appointments[position]
-        holder.tvName.text = "${appt.service_name ?: "Service"} (${appt.plate_no ?: "N/A"})"
-        holder.tvStatus.text = appt.status?.uppercase() ?: "UNKNOWN"
+        holder.tvName.text = appt.service_name ?: "Service"
+        holder.tvStatus.text = appt.status?.uppercase() ?: "PENDING"
         holder.tvDate.text = appt.date ?: "--"
-        holder.tvAmount.text = "₱${appt.total_amount ?: "0.00"}"
+        holder.tvTime.text = appt.time ?: "08:00 AM"
+        holder.tvEstimate.text = "₱${appt.total_amount ?: "0.00"}"
         
-        // Billing Logic
-        val total = appt.total_amount?.toDoubleOrNull() ?: 0.0
-        val paid = appt.paid_amount?.toDoubleOrNull() ?: 0.0
-        val balance = total - paid
-        
-        if (paid > 0) {
-            holder.layoutDownpayment.visibility = View.VISIBLE
-            holder.tvPaid.text = "₱${String.format("%.2f", paid)}"
-            
-            if (balance > 0) {
-                holder.layoutBalance.visibility = View.VISIBLE
-                holder.tvBalance.text = "₱${String.format("%.2f", balance)}"
-            } else {
-                holder.layoutBalance.visibility = View.GONE
-            }
-        } else {
-            holder.layoutDownpayment.visibility = View.GONE
-            holder.layoutBalance.visibility = View.GONE
-        }
-
-        // Dynamic status colors
         val context = holder.itemView.context
-        
-        if (appt.status?.equals("COMPLETED", ignoreCase = true) == true && balance > 0) {
-            holder.btnPay.visibility = View.VISIBLE
-            holder.btnPay.text = "Pay Remaining Balance"
-            holder.btnPay.setOnClickListener {
-                val intent = Intent(context, PaymentActivity::class.java).apply {
-                    putExtra("AMOUNT", String.format("%.2f", balance))
-                    putExtra("JOB_ID", appt.job_id)
-                }
-                context.startActivity(intent)
-            }
-        } else {
-            holder.btnPay.visibility = View.GONE
-        }
-
         when (appt.status?.lowercase()) {
             "pending" -> {
                 holder.tvStatus.setTextColor(context.getColor(R.color.status_pending_text))
                 holder.tvStatus.setBackgroundResource(R.drawable.status_badge_bg)
             }
-            "confirmed" -> {
+            "confirmed", "completed" -> {
                 holder.tvStatus.setTextColor(context.getColor(R.color.status_completed_text))
                 holder.tvStatus.setBackgroundResource(R.drawable.status_success_badge)
+            }
+            "cancelled" -> {
+                holder.tvStatus.setTextColor(context.getColor(R.color.status_cancelled_text))
+                holder.tvStatus.setBackgroundResource(R.drawable.status_danger_badge)
             }
             else -> {
                 holder.tvStatus.setTextColor(context.getColor(R.color.status_active_text))

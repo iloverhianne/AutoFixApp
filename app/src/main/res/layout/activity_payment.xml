@@ -11,7 +11,8 @@
         android:id="@+id/btnBackPayment"
         android:layout_width="48dp"
         android:layout_height="48dp"
-        android:layout_margin="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="40dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:src="@drawable/ic_back_arrow"
         app:layout_constraintStart_toStartOf="parent"
@@ -31,10 +32,12 @@
         app:layout_constraintTop_toTopOf="@id/btnBackPayment" />
 
     <androidx.core.widget.NestedScrollView
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="0dp"
         app:layout_constraintBottom_toTopOf="@id/btnPayNow"
-        app:layout_constraintTop_toBottomOf="@id/btnBackPayment">
+        app:layout_constraintTop_toBottomOf="@id/btnBackPayment"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -220,7 +223,7 @@
 
     <Button
         android:id="@+id/btnPayNow"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="60dp"
         android:layout_margin="24dp"
         android:backgroundTint="#6B46C1"
@@ -229,13 +232,15 @@
         android:textColor="@color/white"
         android:textSize="18sp"
         android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Loading Overlay -->
     <FrameLayout
         android:id="@+id/loadingOverlay"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:background="#80000000"
         android:elevation="10dp"
         android:visibility="gone"
