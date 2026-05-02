@@ -24,8 +24,8 @@ class VehicleAdapter(private var vehicles: List<Vehicle>) :
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val vehicle = vehicles[position]
-        holder.tvMakeModel.text = "${vehicle.make} ${vehicle.model}"
-        holder.tvPlate.text = vehicle.plate_no.uppercase()
+        holder.tvMakeModel.text = "${vehicle.make ?: ""} ${vehicle.model ?: ""}".trim()
+        holder.tvPlate.text = vehicle.plate_no?.uppercase() ?: "N/A"
         holder.tvLastService.text = vehicle.last_service_date ?: "No service yet"
         holder.tvActiveJobs.text = "0" // Logic would go here
     }

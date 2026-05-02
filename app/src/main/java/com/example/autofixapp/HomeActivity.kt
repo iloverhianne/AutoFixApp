@@ -378,9 +378,9 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                             selectedServiceNames.clear()
                             var total = 0.0
                             for (s in servicesList) {
-                                if (selectedServiceIds.contains(s.service_id)) {
-                                    selectedServiceNames.add(s.service_name)
-                                    total += s.price.toDoubleOrNull() ?: 0.0
+                                if (selectedServiceIds.contains(s.service_id ?: "")) {
+                                    selectedServiceNames.add(s.service_name ?: "Unknown Service")
+                                    total += s.price?.toDoubleOrNull() ?: 0.0
                                 }
                             }
                             tvSelectServices.text = if (selectedServiceNames.isEmpty()) "Choose Services..." else selectedServiceNames.joinToString(", ")
@@ -410,13 +410,17 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                     val body = response.body()!!
                     val list = mutableListOf<Pair<Mechanic, Bay>>()
                     
-                    if (body.mechanics.isNotEmpty()) {
-                        for (i in body.mechanics.indices) {
-                            val m = body.mechanics[i]
-                            val b = body.bays.getOrNull(i % body.bays.size) ?: Bay("0", "Any Bay")
-                            list.add(m to b)
+                    body.mechanics?.let { mechanics ->
+                        if (mechanics.isNotEmpty()) {
+                            for (i in mechanics.indices) {
+                                val m = mechanics[i]
+                                val b = body.bays?.getOrNull(i % (body.bays?.size ?: 1)) ?: Bay("0", "Any Bay")
+                                list.add(m to b)
+                            }
+                        } else {
+                            list.add(Mechanic("0", "Auto Assign", "") to Bay("0", "Any Bay"))
                         }
-                    } else {
+                    } ?: run {
                         list.add(Mechanic("0", "Auto Assign", "") to Bay("0", "Any Bay"))
                     }
 
@@ -829,8 +833,8 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
                         if (response.isSuccessful && response.body()?.status == "success") {
                             val data = response.body()!!
                             layoutJobDetails.visibility = View.VISIBLE
-                            tvJobStatus.text = data.jobInfo.status.uppercase()
-                            tvJobCar.text = "${data.jobInfo.make} ${data.jobInfo.model}"
+                            tvJobStatus.text = data.jobInfo.status?.uppercase() ?: "UNKNOWN"
+                            tvJobCar.text = "${data.jobInfo.make ?: ""} ${data.jobInfo.model ?: ""}"
                             
                             timeline.clear()
                             timeline.addAll(data.timeline)

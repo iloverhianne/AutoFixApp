@@ -29,15 +29,16 @@ class ServicesSelectAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val service = services[position]
-        holder.tvName.text = service.service_name
-        holder.tvPrice.text = "₱${service.price}"
+        holder.tvName.text = service.service_name ?: "Unknown"
+        holder.tvPrice.text = "₱${service.price ?: "0.00"}"
         
+        val sid = service.service_id ?: ""
         holder.cbSelect.setOnCheckedChangeListener(null)
-        holder.cbSelect.isChecked = checkedIds.contains(service.service_id)
+        holder.cbSelect.isChecked = checkedIds.contains(sid)
         
         holder.cbSelect.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) checkedIds.add(service.service_id) else checkedIds.remove(service.service_id)
-            onItemSelected(service.service_id, isChecked)
+            if (isChecked) checkedIds.add(sid) else checkedIds.remove(sid)
+            onItemSelected(sid, isChecked)
         }
         
         holder.itemView.setOnClickListener {
