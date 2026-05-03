@@ -220,7 +220,8 @@ data class Vehicle(
     val model: String?,
     @com.google.gson.annotations.SerializedName("year_model")
     val year: String?,
-    val last_service_date: String? = null
+    val last_service_date: String? = null,
+    val active_jobs: Int? = 0
 )
 
 data class Message(

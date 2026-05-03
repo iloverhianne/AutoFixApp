@@ -30,25 +30,23 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+        setContentView(R.layout.activity_main)
+        
+        val etEmail = findViewById<EditText>(R.id.etEmail)
+        val etPassword = findViewById<EditText>(R.id.etPassword)
+        val btnLogin = findViewById<Button>(R.id.btnLogin)
+
         try {
-            // 1. Set layout immediately
-            setContentView(R.layout.activity_main)
-            
-            // 2. Initialize essentials
+            // 1. Initialize essentials
             try { CookieManager.getInstance() } catch (e: Exception) {}
             sessionManager = SessionManager(this)
 
-            // 3. Handle views
-            val etEmail = findViewById<EditText>(R.id.etEmail)
-            val etPassword = findViewById<EditText>(R.id.etPassword)
-            val btnLogin = findViewById<Button>(R.id.btnLogin)
-            
             if (etEmail == null || etPassword == null || btnLogin == null) {
                 android.widget.Toast.makeText(this, "Critical UI Error: Views not found", android.widget.Toast.LENGTH_LONG).show()
                 return
             }
             
-            // 4. Session Check
+            // 2. Session Check
             if (sessionManager.isLoggedIn()) {
                 android.widget.Toast.makeText(this, "Logging you in...", android.widget.Toast.LENGTH_SHORT).show()
                 val intent = android.content.Intent(this, HomeActivity::class.java)

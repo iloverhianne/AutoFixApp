@@ -26,8 +26,8 @@ class VehicleAdapter(private var vehicles: List<Vehicle>) :
         val vehicle = vehicles[position]
         holder.tvMakeModel.text = "${vehicle.make ?: ""} ${vehicle.model ?: ""}".trim()
         holder.tvPlate.text = vehicle.plate_no?.uppercase() ?: "N/A"
-        holder.tvLastService.text = vehicle.last_service_date ?: "No service yet"
-        holder.tvActiveJobs.text = "0" // Logic would go here
+        holder.tvLastService.text = if (vehicle.last_service_date.isNullOrBlank()) "No service yet" else vehicle.last_service_date
+        holder.tvActiveJobs.text = (vehicle.active_jobs ?: 0).toString()
     }
 
     override fun getItemCount() = vehicles.size
