@@ -81,6 +81,14 @@ interface ApiService {
         @Field("year") year: String
     ): Call<BaseResponse>
 
+    @FormUrlEncoded
+    @POST("api-mobile.php?action=remove_vehicle")
+    fun removeVehicle(
+        @Query("tid") tidQuery: String,
+        @Field("customer_id") customerId: String,
+        @Field("vehicle_id") vehicleId: String
+    ): Call<BaseResponse>
+
     // 2.5.7 Loyalty & Rewards
     @FormUrlEncoded
     @POST("api-mobile.php?action=loyalty_status")

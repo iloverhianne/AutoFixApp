@@ -442,7 +442,29 @@ class GarageFragment : Fragment(R.layout.fragment_garage) {
         val emptyLayout = view.findViewById<View>(R.id.layoutEmptyGarage)
         val btnAdd = view.findViewById<View>(R.id.btnAddVehicle)
 
-        adapter = VehicleAdapter(emptyList())
+        adapter = VehicleAdapter(emptyList()) { vehicle ->
+            val vehicleId = vehicle.vehicle_id ?: return@VehicleAdapter
+            
+            AlertDialog.Builder(ctx)
+                .setTitle("Remove Vehicle")
+                .setMessage("Are you sure you want to remove this ${vehicle.make} ${vehicle.model}?")
+                .setPositiveButton("Remove") { _, _ ->
+                    api.removeVehicle(tid, sm.getCustomerId() ?: "", vehicleId)
+                        .enqueue(object : Callback<BaseResponse> {
+                            override fun onResponse(call: Call<BaseResponse>, response: Response<BaseResponse>) {
+                                if (isAdded && response.isSuccessful) {
+                                    Toast.makeText(ctx, "Vehicle removed", Toast.LENGTH_SHORT).show()
+                                    refreshGarage()
+                                }
+                            }
+                            override fun onFailure(call: Call<BaseResponse>, t: Throwable) {
+                                if (isAdded) Toast.makeText(ctx, "Failed to remove vehicle", Toast.LENGTH_SHORT).show()
+                            }
+                        })
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
         rv.layoutManager = LinearLayoutManager(ctx)
         rv.adapter = adapter
 
