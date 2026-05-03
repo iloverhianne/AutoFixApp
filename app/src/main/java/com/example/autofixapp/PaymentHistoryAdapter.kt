@@ -28,7 +28,11 @@ class PaymentHistoryAdapter(private var payments: List<PaymentHistory>) :
         val payment = payments[position]
         holder.tvMethod.text = payment.payment_method?.uppercase() ?: "UNKNOWN"
         holder.tvStatus.text = payment.status?.uppercase() ?: "UNKNOWN"
-        holder.tvDate.text = payment.date ?: "--"
+        holder.tvDate.text = if (!payment.time.isNullOrEmpty()) {
+            "${payment.date ?: "--"} · ${payment.time}"
+        } else {
+            payment.date ?: "--"
+        }
         holder.tvType.text = "Type: ${payment.payment_type?.uppercase() ?: "UNKNOWN"}"
         holder.tvAmount.text = "₱${payment.amount ?: "0.00"}"
 

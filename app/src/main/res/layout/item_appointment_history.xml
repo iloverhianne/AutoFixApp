@@ -63,6 +63,16 @@
                         android:text="Scheduled Appointment"
                         android:textColor="@color/text_mid"
                         android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/tvApptBookingDate"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="1dp"
+                        android:text="Booked on: Mar 15, 2026"
+                        android:textColor="@color/text_low"
+                        android:textSize="10sp"
+                        android:visibility="gone" />
                 </LinearLayout>
             </LinearLayout>
 

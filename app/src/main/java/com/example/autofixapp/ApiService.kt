@@ -246,6 +246,7 @@ data class RepairHistory(
     val paid_amount: String? = "0.00",
     val date: String?,
     val time: String? = null,
+    val created_at: String? = null,
     val rating: Int? = null // For reviews
 )
 
@@ -255,6 +256,8 @@ data class PaymentHistory(
     val payment_type: String?,
     val status: String?,
     val date: String?,
+    val time: String? = null,
+    val created_at: String? = null,
     val plate_no: String? = null,
     val service_name: String? = null
 )

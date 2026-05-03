@@ -304,6 +304,7 @@ class PaymentActivity : AppCompatActivity() {
                     val intent = Intent(this@PaymentActivity, HomeActivity::class.java)
                     intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
                     intent.putExtra("NAVIGATE_TO", "track")
+                    intent.putExtra("JOB_ID", appointmentId)
                     startActivity(intent)
                     finish()
                 } else {

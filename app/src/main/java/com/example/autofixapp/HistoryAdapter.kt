@@ -35,7 +35,11 @@ class HistoryAdapter(private var repairs: List<RepairHistory>, private val onIte
         val repair = repairs[position]
         holder.tvName.text = "${repair.service_name ?: "Repair"} #${repair.job_id ?: "0"} (${repair.plate_no ?: "N/A"})"
         holder.tvStatus.text = repair.status?.uppercase() ?: "UNKNOWN"
-        holder.tvDate.text = repair.date ?: "--"
+        holder.tvDate.text = if (!repair.time.isNullOrEmpty()) {
+            "${repair.date ?: "--"} · ${repair.time}"
+        } else {
+            repair.date ?: "--"
+        }
         holder.tvAmount.text = "₱${repair.total_amount ?: "0.00"}"
         
         // Billing Logic
