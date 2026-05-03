@@ -292,14 +292,13 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
         // 4. Fetch Mechanics & Bays
         api.getMechanicsAndBays(tid).enqueue(object : Callback<MechanicsBaysResponse> {
             override fun onResponse(call: Call<MechanicsBaysResponse>, response: Response<MechanicsBaysResponse>) {
-                if (isAdded && response.isSuccessful && response.body()?.status == "success") {
-                    val body = response.body()!!
+                if (isAdded && response.isSuccessful) {
+                    val body = response.body()
                     val list = mutableListOf<Pair<Mechanic, Bay>>()
                     
-                    body.mechanics?.let { mechanics ->
+                    body?.mechanics?.let { mechanics ->
                         if (mechanics.isNotEmpty()) {
-                            for (i in mechanics.indices) {
-                                val m = mechanics[i]
+                            mechanics.forEachIndexed { i, m ->
                                 val b = body.bays?.getOrNull(i % (body.bays?.size ?: 1)) ?: Bay("0", "Any Bay")
                                 list.add(m to b)
                             }
@@ -404,25 +403,30 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
             val selectedAssgn = mechBaysList.getOrNull(spinnerAssignment.selectedItemPosition)
 
             if (selectedServiceIds.isEmpty() || estimateVal.isEmpty() || estimateVal == "0.00") {
-                Toast.makeText(ctxInner, "Please select a valid service first", Toast.LENGTH_SHORT).show()
+                Toast.makeText(ctxInner, "Please select at least one service.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
             try {
+                // Determine Mechanic ID safely
+                val mechanicId = selectedAssgn?.first?.mechanic_id ?: "0"
+                val mechanicName = selectedAssgn?.first?.full_name ?: "Auto Assign"
+
                 val intent = Intent(ctxInner, PaymentActivity::class.java).apply {
                     putExtra("serviceId", serviceIdsString)
-                    putExtra("serviceName", if (selectedServiceNames.size > 1) "Multiple Services" else selectedServiceNames.firstOrNull())
+                    putExtra("serviceName", if (selectedServiceNames.size > 1) "Multiple Services" else selectedServiceNames.firstOrNull() ?: "General Service")
                     putExtra("vehicleId", selectedVehicleId)
                     putExtra("date", etDate.text.toString())
-                    putExtra("time", spinnerTime.selectedItem?.toString())
+                    putExtra("time", spinnerTime.selectedItem?.toString() ?: "8:00 AM")
                     putExtra("estimate", estimateVal)
-                    putExtra("mechanicId", selectedAssgn?.first?.mechanic_id)
-                    putExtra("mechanicName", selectedAssgn?.first?.full_name)
-                    putExtra("bayId", null as String?)
+                    putExtra("mechanicId", mechanicId)
+                    putExtra("mechanicName", mechanicName)
+                    putExtra("bayId", "0") 
                 }
                 startActivity(intent)
             } catch (e: Exception) {
-                Toast.makeText(ctxInner, "Launch Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                e.printStackTrace()
+                Toast.makeText(ctxInner, "Could not open Payment screen. Please try again.", Toast.LENGTH_LONG).show()
             }
         }
     }
