@@ -43,4 +43,6 @@ class VehicleAdapter(
         this.vehicles = newVehicles
         notifyDataSetChanged()
     }
+
+    fun getVehicles() = vehicles
 }

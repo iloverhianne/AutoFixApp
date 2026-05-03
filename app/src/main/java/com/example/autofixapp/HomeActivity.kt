@@ -394,7 +394,7 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
             today.set(java.util.Calendar.MILLISECOND, 0)
 
             if (selectedCalendar != null && selectedCalendar!!.before(today)) {
-                Toast.makeText(ctxInner, "Bawal po pumili ng nakalipas na araw.", Toast.LENGTH_LONG).show()
+                Toast.makeText(ctxInner, "You cannot select a past date.", Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
 
@@ -404,7 +404,7 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
             val selectedAssgn = mechBaysList.getOrNull(spinnerAssignment.selectedItemPosition)
 
             if (selectedServiceIds.isEmpty() || estimateVal.isEmpty() || estimateVal == "0.00") {
-                Toast.makeText(ctxInner, "Paki-select po muna ng valid service", Toast.LENGTH_SHORT).show()
+                Toast.makeText(ctxInner, "Please select a valid service first", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -442,32 +442,6 @@ class GarageFragment : Fragment(R.layout.fragment_garage) {
         val emptyLayout = view.findViewById<View>(R.id.layoutEmptyGarage)
         val btnAdd = view.findViewById<View>(R.id.btnAddVehicle)
 
-        adapter = VehicleAdapter(emptyList()) { vehicle ->
-            val vehicleId = vehicle.vehicle_id ?: return@VehicleAdapter
-            
-            AlertDialog.Builder(ctx)
-                .setTitle("Remove Vehicle")
-                .setMessage("Are you sure you want to remove this ${vehicle.make} ${vehicle.model}?")
-                .setPositiveButton("Remove") { _, _ ->
-                    api.removeVehicle(tid, sm.getCustomerId() ?: "", vehicleId)
-                        .enqueue(object : Callback<BaseResponse> {
-                            override fun onResponse(call: Call<BaseResponse>, response: Response<BaseResponse>) {
-                                if (isAdded && response.isSuccessful) {
-                                    Toast.makeText(ctx, "Vehicle removed", Toast.LENGTH_SHORT).show()
-                                    refreshGarage()
-                                }
-                            }
-                            override fun onFailure(call: Call<BaseResponse>, t: Throwable) {
-                                if (isAdded) Toast.makeText(ctx, "Failed to remove vehicle", Toast.LENGTH_SHORT).show()
-                            }
-                        })
-                }
-                .setNegativeButton("Cancel", null)
-                .show()
-        }
-        rv.layoutManager = LinearLayoutManager(ctx)
-        rv.adapter = adapter
-
         fun refreshGarage() {
             api.getGarage(tid, sm.getCustomerId() ?: "").enqueue(object : Callback<GarageResponse> {
                 override fun onResponse(call: Call<GarageResponse>, response: Response<GarageResponse>) {
@@ -480,6 +454,38 @@ class GarageFragment : Fragment(R.layout.fragment_garage) {
                 override fun onFailure(call: Call<GarageResponse>, t: Throwable) {}
             })
         }
+
+        adapter = VehicleAdapter(emptyList()) { vehicle ->
+            val vehicleId = vehicle.vehicle_id ?: return@VehicleAdapter
+            
+            // Immediate UI update (Optimistic)
+            val currentList = adapter.getVehicles().toMutableList()
+            val removedItem = currentList.find { it.vehicle_id == vehicleId }
+            if (removedItem != null) {
+                currentList.remove(removedItem)
+                adapter.updateData(currentList)
+                emptyLayout.visibility = if (currentList.isEmpty()) View.VISIBLE else View.GONE
+            }
+
+            api.deleteVehicle(tidQuery = tid, customerId = sm.getCustomerId() ?: "", vehicleId = vehicleId)
+                .enqueue(object : Callback<BaseResponse> {
+                    override fun onResponse(call: Call<BaseResponse>, response: Response<BaseResponse>) {
+                        if (response.isSuccessful && response.body()?.status == "success") {
+                            // Success! No need to do anything as it's already removed from UI
+                        } else {
+                            // If it failed on server, tell the user why
+                            val msg = response.body()?.message ?: "Server sync failed"
+                            if (isAdded) Toast.makeText(ctx, "Database Error: $msg", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    override fun onFailure(call: Call<BaseResponse>, t: Throwable) {
+                        if (isAdded) Toast.makeText(ctx, "Network Error: Could not reach database", Toast.LENGTH_SHORT).show()
+                    }
+                })
+        }
+        rv.layoutManager = LinearLayoutManager(ctx)
+        rv.adapter = adapter
+
 
         btnAdd.setOnClickListener {
             val dialogView = LayoutInflater.from(ctx).inflate(R.layout.dialog_add_vehicle, null)
@@ -505,13 +511,21 @@ class GarageFragment : Fragment(R.layout.fragment_garage) {
                     return@setOnClickListener
                 }
 
+                if (make.any { it.isDigit() } || model.any { it.isDigit() }) {
+                    Toast.makeText(ctx, "Numbers are not allowed in the Make or Model.", Toast.LENGTH_LONG).show()
+                    return@setOnClickListener
+                }
+
                 api.addVehicle(tid, "add_vehicle", sm.getCustomerId() ?: "", plate, make, model, year)
                     .enqueue(object : Callback<BaseResponse> {
                         override fun onResponse(call: Call<BaseResponse>, response: Response<BaseResponse>) {
-                            if (isAdded && response.isSuccessful) {
+                            if (isAdded && response.isSuccessful && response.body()?.status == "success") {
                                 Toast.makeText(ctx, "Vehicle Added!", Toast.LENGTH_SHORT).show()
                                 refreshGarage()
                                 dialog.dismiss()
+                            } else {
+                                val msg = response.body()?.message ?: "Failed to add vehicle"
+                                if (isAdded) Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show()
                             }
                         }
                         override fun onFailure(call: Call<BaseResponse>, t: Throwable) {}

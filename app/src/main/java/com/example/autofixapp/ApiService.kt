@@ -66,7 +66,8 @@ interface ApiService {
     @POST("api-mobile.php?action=get_garage")
     fun getGarage(
         @Query("tid") tenantIdQuery: String,
-        @Field("customer_id") customerId: String
+        @Field("customer_id") customerId: String,
+        @Query("v") version: String = System.currentTimeMillis().toString()
     ): Call<GarageResponse>
 
     @FormUrlEncoded
@@ -83,8 +84,9 @@ interface ApiService {
 
     @FormUrlEncoded
     @POST("api-mobile.php?action=remove_vehicle")
-    fun removeVehicle(
+    fun deleteVehicle(
         @Query("tid") tidQuery: String,
+        @Field("action") action: String = "remove_vehicle",
         @Field("customer_id") customerId: String,
         @Field("vehicle_id") vehicleId: String
     ): Call<BaseResponse>
