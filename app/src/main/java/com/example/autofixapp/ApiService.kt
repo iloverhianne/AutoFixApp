@@ -244,7 +244,9 @@ data class RepairHistory(
     val status: String?,
     val total_amount: String?,
     val paid_amount: String? = "0.00",
+    @com.google.gson.annotations.SerializedName("date", alternate = ["appointment_date", "scheduled_date"])
     val date: String?,
+    @com.google.gson.annotations.SerializedName("time", alternate = ["appointment_time", "scheduled_time", "service_time", "booking_time"])
     val time: String? = null,
     val rating: Int? = null // For reviews
 )

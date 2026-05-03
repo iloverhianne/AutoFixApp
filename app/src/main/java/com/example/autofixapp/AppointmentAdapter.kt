@@ -30,7 +30,7 @@ class AppointmentAdapter(private var appointments: List<RepairHistory>) :
         holder.tvName.text = appt.service_name ?: "Service"
         holder.tvStatus.text = appt.status?.uppercase() ?: "PENDING"
         holder.tvDate.text = appt.date ?: "--"
-        holder.tvTime.text = appt.time ?: "08:00 AM"
+        holder.tvTime.text = if (!appt.time.isNullOrBlank()) appt.time else "8:00 AM" // Default to 8am if absolutely missing
         holder.tvEstimate.text = "₱${appt.total_amount ?: "0.00"}"
         
         val context = holder.itemView.context
