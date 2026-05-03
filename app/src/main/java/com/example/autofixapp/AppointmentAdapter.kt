@@ -17,7 +17,6 @@ class AppointmentAdapter(private var appointments: List<RepairHistory>) :
         val tvDate: TextView = view.findViewById(R.id.tvApptDate)
         val tvTime: TextView = view.findViewById(R.id.tvApptTime)
         val tvEstimate: TextView = view.findViewById(R.id.tvApptEstimate)
-        val tvBookingDate: TextView = view.findViewById(R.id.tvApptBookingDate)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -31,20 +30,8 @@ class AppointmentAdapter(private var appointments: List<RepairHistory>) :
         holder.tvName.text = appt.service_name ?: "Service"
         holder.tvStatus.text = appt.status?.uppercase() ?: "PENDING"
         holder.tvDate.text = appt.date ?: "--"
-        
-        // Show actual time from API, or default to 8:00 AM if null
-        val timeDisplay = appt.time ?: "08:00 AM"
-        holder.tvTime.text = if (timeDisplay.contains(":")) timeDisplay else "08:00 AM"
-        
+        holder.tvTime.text = appt.time ?: "08:00 AM"
         holder.tvEstimate.text = "₱${appt.total_amount ?: "0.00"}"
-        
-        // Show Booking Date (Created At)
-        if (!appt.created_at.isNullOrEmpty()) {
-            holder.tvBookingDate.visibility = View.VISIBLE
-            holder.tvBookingDate.text = "Booked on: ${appt.created_at}"
-        } else {
-            holder.tvBookingDate.visibility = View.GONE
-        }
         
         val context = holder.itemView.context
         when (appt.status?.lowercase()) {

@@ -26,6 +26,9 @@ class PaymentActivity : AppCompatActivity() {
 
     private var fullAmount: Double = 0.0
     private var amountToPay: Double = 0.0
+    private var loyaltyDiscount: Double = 0.0
+    private var userPoints: Int = 0
+    private var isPointsApplied: Boolean = false
 
     // Views
     private lateinit var tvPaymentAmount: TextView
@@ -38,6 +41,8 @@ class PaymentActivity : AppCompatActivity() {
     private lateinit var rbCard: RadioButton
     private lateinit var btnPayNow: Button
     private lateinit var loadingOverlay: FrameLayout
+    private lateinit var tvCurrentPoints: TextView
+    private lateinit var btnApplyPoints: Button
 
     // Intent Extras
     private var serviceId: String = ""
@@ -86,6 +91,7 @@ class PaymentActivity : AppCompatActivity() {
 
         initViews()
         setupListeners()
+        fetchLoyaltyPoints()
         updateAmountToPay()
     }
 
@@ -102,6 +108,8 @@ class PaymentActivity : AppCompatActivity() {
 
         btnPayNow = findViewById(R.id.btnPayNow)
         loadingOverlay = findViewById(R.id.loadingOverlay)
+        tvCurrentPoints = findViewById(R.id.tvCurrentPoints)
+        btnApplyPoints = findViewById(R.id.btnApplyPoints)
 
         findViewById<ImageButton>(R.id.btnBackPayment).setOnClickListener {
             finish()
@@ -124,18 +132,74 @@ class PaymentActivity : AppCompatActivity() {
         btnPayNow.setOnClickListener {
             processPayment()
         }
+
+        btnApplyPoints.setOnClickListener {
+            togglePoints()
+        }
+    }
+
+    private fun fetchLoyaltyPoints() {
+        val tid = sessionManager.getTenantId() ?: "1"
+        val cid = sessionManager.getCustomerId() ?: ""
+        
+        apiService.getLoyaltyStatus(tid, cid).enqueue(object : Callback<LoyaltyResponse> {
+            override fun onResponse(call: Call<LoyaltyResponse>, response: Response<LoyaltyResponse>) {
+                if (response.isSuccessful) {
+                    userPoints = response.body()?.points ?: 0
+                    tvCurrentPoints.text = "$userPoints pts"
+                    if (userPoints <= 0) {
+                        btnApplyPoints.isEnabled = false
+                        btnApplyPoints.alpha = 0.5f
+                    }
+                }
+            }
+            override fun onFailure(call: Call<LoyaltyResponse>, t: Throwable) {}
+        })
+    }
+
+    private fun togglePoints() {
+        if (!isPointsApplied) {
+            // Apply points
+            loyaltyDiscount = userPoints.toDouble() // 1 Pt = 1 PHP
+            if (loyaltyDiscount > fullAmount) loyaltyDiscount = fullAmount
+            
+            isPointsApplied = true
+            btnApplyPoints.text = "REMOVE POINTS DISCOUNT"
+            Toast.makeText(this, "₱$loyaltyDiscount discount applied!", Toast.LENGTH_SHORT).show()
+        } else {
+            // Remove points
+            loyaltyDiscount = 0.0
+            isPointsApplied = false
+            btnApplyPoints.text = "APPLY ALL POINTS"
+        }
+        updateAmountToPay()
     }
 
     private fun updateAmountToPay() {
-        amountToPay = if (rbDownpayment.isChecked) {
+        var baseAmount = if (rbDownpayment.isChecked) {
             fullAmount * 0.20 // 20% downpayment
         } else {
             fullAmount
         }
 
+        // Apply loyalty discount to the final amount
+        amountToPay = baseAmount - loyaltyDiscount
+        if (amountToPay < 0) amountToPay = 0.0
+
         val typeStr = if (rbDownpayment.isChecked) "Downpayment" else "Full Payment"
         tvPaymentDesc.text = "$typeStr for $serviceName"
-        tvPaymentAmount.text = String.format("₱%.2f", amountToPay)
+        
+        if (loyaltyDiscount > 0) {
+            tvPaymentAmount.text = String.format("₱%.2f (Saved ₱%.2f)", amountToPay, loyaltyDiscount)
+        } else {
+            tvPaymentAmount.text = String.format("₱%.2f", amountToPay)
+        }
+
+        if (amountToPay <= 0) {
+            btnPayNow.text = "CONFIRM FREE BOOKING"
+        } else {
+            btnPayNow.text = "PAY NOW"
+        }
     }
 
     private fun processPayment() {

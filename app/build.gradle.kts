@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "com.example.autofixapp"
-    compileSdk = 36 // Eto yung gusto mo bro
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.jbd.autofix"
         minSdk = 26
-        targetSdk = 36 // Target naming Android 16
+        targetSdk = 34
 
         versionCode = 1
         versionName = "1.0"

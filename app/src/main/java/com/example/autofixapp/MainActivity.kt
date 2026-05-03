@@ -30,37 +30,43 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // 1. Set layout immediately to avoid black screen
-        setContentView(R.layout.activity_main)
-        
-        // 2. Initialize essentials
-        try { CookieManager.getInstance() } catch (e: Exception) {}
-        sessionManager = SessionManager(this)
+        try {
+            // 1. Set layout immediately
+            setContentView(R.layout.activity_main)
+            
+            // 2. Initialize essentials
+            try { CookieManager.getInstance() } catch (e: Exception) {}
+            sessionManager = SessionManager(this)
 
-        // 3. Handle views
-        val etEmail = findViewById<EditText>(R.id.etEmail)
-        val etPassword = findViewById<EditText>(R.id.etPassword)
-        val btnLogin = findViewById<Button>(R.id.btnLogin)
-        
-        // 4. Session Check (with slight delay to allow UI to breathe)
-        if (sessionManager.isLoggedIn()) {
-            Handler(Looper.getMainLooper()).postDelayed({
+            // 3. Handle views
+            val etEmail = findViewById<EditText>(R.id.etEmail)
+            val etPassword = findViewById<EditText>(R.id.etPassword)
+            val btnLogin = findViewById<Button>(R.id.btnLogin)
+            
+            if (etEmail == null || etPassword == null || btnLogin == null) {
+                android.widget.Toast.makeText(this, "Critical UI Error: Views not found", android.widget.Toast.LENGTH_LONG).show()
+                return
+            }
+            
+            // 4. Session Check
+            if (sessionManager.isLoggedIn()) {
+                android.widget.Toast.makeText(this, "Logging you in...", android.widget.Toast.LENGTH_SHORT).show()
                 val intent = android.content.Intent(this, HomeActivity::class.java)
                 intent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
                 startActivity(intent)
                 finish()
-            }, 100)
-            return
+                return
+            }
+
+            btnLogin.visibility = android.view.View.VISIBLE
+            etEmail.visibility = android.view.View.VISIBLE
+            etPassword.visibility = android.view.View.VISIBLE
+            btnLogin.isEnabled = true
+            
+        } catch (e: Exception) {
+            android.util.Log.e("AutoFixDebug", "Startup Error", e)
+            android.widget.Toast.makeText(this, "Startup Error: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
         }
-
-        btnLogin.visibility = android.view.View.VISIBLE
-        etEmail.visibility = android.view.View.VISIBLE
-        etPassword.visibility = android.view.View.VISIBLE
-        btnLogin.isEnabled = true
-        btnLogin.text = "LOGIN TO MY ACCOUNT"
-
-        // Removed Stealth Unlocker from startup to prevent memory hang
-        // We will trigger it only if login fails with 403.
 
         btnLogin.setOnClickListener {
             val email = etEmail.text.toString().trim()
