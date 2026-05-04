@@ -321,10 +321,18 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
             override fun onResponse(call: Call<GarageResponse>, response: Response<GarageResponse>) {
                 if (isAdded && response.isSuccessful) {
                     vehicleList = response.body()?.data ?: emptyList()
-                    val labels = vehicleList.map { "${it.make} ${it.model} (${it.plate_no})" }
-                    val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, labels)
-                    adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
-                    spinnerVehicle.adapter = adapter
+                    if (vehicleList.isEmpty()) {
+                        val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, listOf("No vehicles found. Please add a vehicle first."))
+                        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+                        spinnerVehicle.adapter = adapter
+                        spinnerVehicle.isEnabled = false
+                    } else {
+                        val labels = vehicleList.map { "${it.make} ${it.model} (${it.plate_no})" }
+                        val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, labels)
+                        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+                        spinnerVehicle.adapter = adapter
+                        spinnerVehicle.isEnabled = true
+                    }
                 }
             }
             override fun onFailure(call: Call<GarageResponse>, t: Throwable) {
@@ -603,6 +611,11 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
             val serviceIdsString = selectedServiceIds.joinToString(",")
             val estimateVal = tvEstimate.text.toString().replace("\u20b1", "").replace(",", "").trim()
             val selectedAssgn = mechBaysList.getOrNull(spinnerAssignment.selectedItemPosition)
+
+            if (vehicleList.isEmpty() || selectedVehicleId == "0") {
+                Toast.makeText(ctxInner, "Please add and select a vehicle first.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
 
             val selectedSlot = scheduleSlotsList.getOrNull(spinnerTime.selectedItemPosition)
             if (selectedSlot == null || selectedSlot.available_mechanics_count <= 0) {
