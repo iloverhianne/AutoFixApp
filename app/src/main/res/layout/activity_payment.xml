@@ -304,13 +304,51 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- Full Screen Payment Simulation Overlay (Fixes Shaking/Rising Violet issue) -->
+    <FrameLayout
+        android:id="@+id/paymentSimulationOverlay"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@color/deep_dark"
+        android:elevation="15dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_margin="16dp"
+            app:cardBackgroundColor="@color/surface_dark"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="0dp">
+
+            <android.webkit.WebView
+                android:id="@+id/wvPayment"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </androidx.cardview.widget.CardView>
+        
+        <ImageButton
+            android:id="@+id/btnCloseSimulation"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="top|end"
+            android:layout_margin="24dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            app:tint="@color/white" />
+    </FrameLayout>
+
     <!-- Loading Overlay -->
     <FrameLayout
         android:id="@+id/loadingOverlay"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="#80000000"
-        android:elevation="10dp"
+        android:background="#E6030712"
+        android:elevation="20dp"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -323,24 +361,25 @@
             android:layout_gravity="center"
             app:cardBackgroundColor="@color/input_dark"
             app:cardCornerRadius="16dp"
-            app:cardElevation="8dp">
+            app:cardElevation="0dp">
 
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:orientation="vertical"
-                android:padding="24dp">
+                android:padding="32dp">
 
                 <ProgressBar
-                    android:layout_width="50dp"
-                    android:layout_height="50dp" />
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:indeterminateTint="#6B46C1" />
 
                 <TextView
                     android:id="@+id/tvLoadingStatus"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
+                    android:layout_marginTop="20dp"
                     android:text="Processing Payment..."
                     android:textColor="@color/white"
                     android:textSize="16sp" />

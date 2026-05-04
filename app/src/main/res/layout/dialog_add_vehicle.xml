@@ -23,17 +23,24 @@
         android:textColorHint="@color/text_mid"
         app:hintTextColor="@color/primary_brand"
         app:boxStrokeColor="@color/primary_brand"
-        app:boxBackgroundColor="@color/card_dark"
-        app:boxBackgroundMode="filled"
-        style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
-        android:layout_marginBottom="16dp">
+        app:boxStrokeWidth="1.5dp"
+        app:boxStrokeWidthFocused="2.5dp"
+        app:boxBackgroundColor="@color/surface_dark"
+        app:boxCornerRadiusBottomEnd="12dp"
+        app:boxCornerRadiusBottomStart="12dp"
+        app:boxCornerRadiusTopEnd="12dp"
+        app:boxCornerRadiusTopStart="12dp"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_marginBottom="18dp">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etPlate"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColor="@color/white"
-            android:padding="16dp"
+            android:paddingTop="28dp"
+            android:paddingBottom="12dp"
+            android:gravity="bottom"
             android:inputType="textCapCharacters" />
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -44,17 +51,24 @@
         android:textColorHint="@color/text_mid"
         app:hintTextColor="@color/primary_brand"
         app:boxStrokeColor="@color/primary_brand"
-        app:boxBackgroundColor="@color/card_dark"
-        app:boxBackgroundMode="filled"
-        style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
-        android:layout_marginBottom="16dp">
+        app:boxStrokeWidth="1.5dp"
+        app:boxStrokeWidthFocused="2.5dp"
+        app:boxBackgroundColor="@color/surface_dark"
+        app:boxCornerRadiusBottomEnd="12dp"
+        app:boxCornerRadiusBottomStart="12dp"
+        app:boxCornerRadiusTopEnd="12dp"
+        app:boxCornerRadiusTopStart="12dp"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_marginBottom="18dp">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etMake"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColor="@color/white"
-            android:padding="16dp"
+            android:paddingTop="28dp"
+            android:paddingBottom="12dp"
+            android:gravity="bottom"
             android:inputType="textCapWords" />
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -65,17 +79,24 @@
         android:textColorHint="@color/text_mid"
         app:hintTextColor="@color/primary_brand"
         app:boxStrokeColor="@color/primary_brand"
-        app:boxBackgroundColor="@color/card_dark"
-        app:boxBackgroundMode="filled"
-        style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
-        android:layout_marginBottom="16dp">
+        app:boxStrokeWidth="1.5dp"
+        app:boxStrokeWidthFocused="2.5dp"
+        app:boxBackgroundColor="@color/surface_dark"
+        app:boxCornerRadiusBottomEnd="12dp"
+        app:boxCornerRadiusBottomStart="12dp"
+        app:boxCornerRadiusTopEnd="12dp"
+        app:boxCornerRadiusTopStart="12dp"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_marginBottom="18dp">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etModel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColor="@color/white"
-            android:padding="16dp"
+            android:paddingTop="28dp"
+            android:paddingBottom="12dp"
+            android:gravity="bottom"
             android:inputType="textCapWords" />
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -86,17 +107,24 @@
         android:textColorHint="@color/text_mid"
         app:hintTextColor="@color/primary_brand"
         app:boxStrokeColor="@color/primary_brand"
-        app:boxBackgroundColor="@color/card_dark"
-        app:boxBackgroundMode="filled"
-        style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
-        android:layout_marginBottom="24dp">
+        app:boxStrokeWidth="1.5dp"
+        app:boxStrokeWidthFocused="2.5dp"
+        app:boxBackgroundColor="@color/surface_dark"
+        app:boxCornerRadiusBottomEnd="12dp"
+        app:boxCornerRadiusBottomStart="12dp"
+        app:boxCornerRadiusTopEnd="12dp"
+        app:boxCornerRadiusTopStart="12dp"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_marginBottom="28dp">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etYear"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColor="@color/white"
-            android:padding="16dp"
+            android:paddingTop="28dp"
+            android:paddingBottom="12dp"
+            android:gravity="bottom"
             android:inputType="number" />
     </com.google.android.material.textfield.TextInputLayout>
 

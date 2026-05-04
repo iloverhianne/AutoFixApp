@@ -41,31 +41,21 @@ class HistoryAdapter(private var repairs: List<RepairHistory>, private val onIte
                 if (rawTime.contains("AM", ignoreCase = true) || rawTime.contains("PM", ignoreCase = true)) {
                     rawTime
                 } else {
-                    val parts = rawTime.split(":")
-                    if (parts.size >= 2) {
-                        var hour24 = parts[0].toInt()
-                        val minute = parts[1]
-                        
-                        // Smart Fix: If hour is 1-7, it's likely PM (Shop opens at 8AM)
-                        if (hour24 in 1..7) hour24 += 12
-                        
-                        val ampm = if (hour24 >= 12) "PM" else "AM"
-                        val hour12 = when {
-                            hour24 == 0 -> 12
-                            hour24 > 12 -> hour24 - 12
-                            else -> hour24
+                    val tParts = rawTime.split(":")
+                    if (tParts.size >= 2) {
+                        var h = tParts[0].toInt()
+                        val m = tParts[1]
+                        val ampm = if (h >= 12) "PM" else "AM"
+                        val h12 = when {
+                            h == 0 -> 12
+                            h > 12 -> h - 12
+                            else -> h
                         }
-                        String.format("%02d:%s %s", hour12, minute, ampm)
-                    } else {
-                        rawTime
-                    }
+                        String.format("%02d:%s %s", h12, m, ampm)
+                    } else rawTime
                 }
-            } catch (e: Exception) {
-                rawTime
-            }
-        } else {
-            null
-        }
+            } catch (e: Exception) { rawTime }
+        } else null
 
         holder.tvDate.text = if (!formattedTime.isNullOrEmpty()) {
             "${repair.date ?: "--"} · $formattedTime"

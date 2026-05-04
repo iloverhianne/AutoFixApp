@@ -204,55 +204,66 @@ class PaymentActivity : AppCompatActivity() {
 
     private fun processPayment() {
         val paymentMethod = if (rbGcash.isChecked) "GCash" else "Credit/Debit Card"
-        
-        // Detailed log to match the console
-        android.util.Log.d("PAYMENT_SIM", "Initializing PayMongo Intent for $amountToPay ($paymentMethod)")
+        android.util.Log.d("PAYMENT_SIM", "Initializing simulation for $amountToPay ($paymentMethod)")
 
-        // For simulation, let's create a WebView in a Dialog to "simulate" PayMongo Checkout
-        val webView = android.webkit.WebView(this)
+        val overlay = findViewById<FrameLayout>(R.id.paymentSimulationOverlay)
+        val webView = findViewById<android.webkit.WebView>(R.id.wvPayment)
+        val btnClose = findViewById<ImageButton>(R.id.btnCloseSimulation)
+
+        overlay.visibility = View.VISIBLE
         webView.settings.javaScriptEnabled = true
         
-        val dialog = AlertDialog.Builder(this)
-            .setView(webView)
-            .setCancelable(false)
-            .create()
+        btnClose.setOnClickListener {
+            overlay.visibility = View.GONE
+        }
 
-        // Mock PayMongo HTML
+        // Mock PayMongo HTML with stable design
         val html = """
             <!DOCTYPE html>
             <html>
             <head>
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <style>
-                    body { font-family: sans-serif; background: #030712; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
-                    .card { background: #111827; padding: 30px; border-radius: 20px; width: 85%; border: 1px solid #1f2937; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-                    .logo { width: 140px; margin-bottom: 30px; }
-                    .amount { font-size: 32px; font-weight: bold; color: #10b981; margin: 10px 0; }
-                    .btn { background: #005ce6; color: white; border: none; padding: 15px; width: 100%; border-radius: 12px; font-weight: bold; margin-top: 30px; font-size: 16px; cursor: pointer; }
-                    .loading { display: none; margin-top: 20px; color: #94a3b8; }
+                    body { font-family: -apple-system, sans-serif; background: #111827; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; overflow: hidden; }
+                    .card { background: #1f2937; padding: 40px 20px; border-radius: 24px; width: 85%; box-shadow: 0 20px 40px rgba(0,0,0,0.4); border: 1px solid #374151; }
+                    .logo { width: 150px; margin-bottom: 40px; filter: brightness(1.2); }
+                    .label { color: #9ca3af; font-size: 14px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+                    .amount { font-size: 40px; font-weight: 800; color: #10b981; margin: 0 0 8px 0; }
+                    .ref { font-size: 12px; color: #6b7280; font-family: monospace; }
+                    .btn { background: #005ce6; color: white; border: none; padding: 18px; width: 100%; border-radius: 16px; font-weight: bold; margin-top: 40px; font-size: 16px; cursor: pointer; transition: all 0.2s; }
+                    .btn:active { transform: scale(0.98); opacity: 0.9; }
+                    .loader { display: none; margin-top: 30px; color: #10b981; font-weight: bold; }
+                    .dots { display: inline-block; width: 8px; height: 8px; background: #10b981; border-radius: 50%; margin: 0 4px; animation: bounce 0.6s infinite alternate; }
+                    @keyframes bounce { to { transform: translateY(-8px); } }
                 </style>
             </head>
             <body>
-                <div class="card" id="card">
+                <div class="card">
                     <img src="https://www.paymongo.com/static/images/paymongo-logo-horizontal.svg" class="logo">
-                    <div style="color: #94a3b8; font-size: 14px;">Total Amount Due</div>
+                    <div class="label">Amount to Pay</div>
                     <div class="amount">₱${String.format("%.2f", amountToPay)}</div>
-                    <div style="font-size: 12px; color: #4b5563; margin-top: 5px;">Ref: PAY-SIM-${System.currentTimeMillis() % 10000}</div>
+                    <div class="ref">REF: PM-${System.currentTimeMillis() % 1000000}</div>
                     
-                    <button class="btn" onclick="payNow()">PAY WITH GCASH</button>
-                    <div id="loader" class="loading">Processing payment...</div>
+                    <button class="btn" id="payBtn" onclick="payNow()">PAY WITH GCASH</button>
                     
-                    <div style="margin-top: 20px; font-size: 11px; color: #374151;">Redirecting to GCash Gateway...</div>
+                    <div id="loader" class="loader">
+                        Authenticating
+                        <div style="margin-top: 15px;">
+                            <div class="dots"></div>
+                            <div class="dots" style="animation-delay: 0.2s"></div>
+                            <div class="dots" style="animation-delay: 0.4s"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <script>
                     function payNow() {
-                        document.querySelector('.btn').style.display = 'none';
+                        document.getElementById('payBtn').style.display = 'none';
                         document.getElementById('loader').style.display = 'block';
                         
                         setTimeout(() => {
                             window.location.href = "https://success.paymongo.com/?status=success";
-                        }, 2500);
+                        }, 3000);
                     }
                 </script>
             </body>
@@ -262,7 +273,7 @@ class PaymentActivity : AppCompatActivity() {
         webView.webViewClient = object : android.webkit.WebViewClient() {
             override fun shouldOverrideUrlLoading(view: android.webkit.WebView?, url: String?): Boolean {
                 if (url?.contains("status=success") == true) {
-                    dialog.dismiss()
+                    overlay.visibility = View.GONE
                     showSuccessDialog()
                     return true
                 }
@@ -271,7 +282,6 @@ class PaymentActivity : AppCompatActivity() {
         }
 
         webView.loadDataWithBaseURL("https://pay.paymongo.com", html, "text/html", "UTF-8", null)
-        dialog.show()
     }
 
     private fun showSuccessDialog() {
@@ -387,7 +397,7 @@ class PaymentActivity : AppCompatActivity() {
 
                     val intent = Intent(this@PaymentActivity, HomeActivity::class.java)
                     intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
-                    intent.putExtra("NAVIGATE_TO", "track")
+                    intent.putExtra("NAVIGATE_TO", "history")
                     intent.putExtra("JOB_ID", appointmentId)
                     startActivity(intent)
                     finish()

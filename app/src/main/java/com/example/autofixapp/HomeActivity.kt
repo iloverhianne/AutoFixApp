@@ -63,6 +63,9 @@ class HomeActivity : AppCompatActivity() {
                 loadFragment(TrackingFragment().apply { 
                     arguments = Bundle().apply { putString("JOB_ID", intent.getStringExtra("JOB_ID")) }
                 })
+            } else if (navigateTo == "history") {
+                bottomNav.selectedItemId = R.id.nav_history
+                loadFragment(HistoryFragment())
             } else {
                 loadFragment(HomeFragment())
             }
@@ -338,7 +341,7 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
             val date = etDate.text.toString()
             val time = spinnerTime.selectedItem?.toString()
 
-            if (date.isEmpty() || time.isNullOrEmpty()) {
+            if (date.isEmpty() || time.isNullOrEmpty() || time.contains("Select") || time.contains("Loading") || time.contains("Error") || time.contains("No schedule") || time.contains("...")) {
                 val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, listOf("Select date and time first"))
                 adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
                 spinnerAssignment.adapter = adapter
@@ -390,12 +393,11 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                 }
                 override fun onFailure(call: Call<MechanicsBaysResponse>, t: Throwable) {
                     if (isAdded) {
-                        val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, listOf("Network error"))
+                        val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, listOf("Mechanics offline"))
                         adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
                         spinnerAssignment.adapter = adapter
                         spinnerAssignment.isEnabled = false
                         tvMechs.text = "Error"
-                        Toast.makeText(ctx, "Failed to load mechanics", Toast.LENGTH_SHORT).show()
                     }
                 }
             })
@@ -428,15 +430,18 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                             spinnerTime.adapter = adapter
                             spinnerTime.isEnabled = false
                         } else {
-                            scheduleSlotsList = body?.schedules ?: emptyList()
+                            scheduleSlotsList = body?.time_slots ?: body?.schedules ?: emptyList()
                             
                             if (scheduleSlotsList.isEmpty()) {
-                                val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, listOf("No schedules available (Check DB)"))
+                                val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, listOf("No schedule available"))
                                 adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
                                 spinnerTime.adapter = adapter
                                 spinnerTime.isEnabled = false
                             } else {
-                                val available = scheduleSlotsList.map { it.time_range }
+                                val available = scheduleSlotsList.map { 
+                                    if (it.available_mechanics_count > 0) it.display_time 
+                                    else "${it.display_time} (Fully Booked)"
+                                }
                                 val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, available)
                                 adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
                                 spinnerTime.adapter = adapter
@@ -444,10 +449,23 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                             }
                         }
                     } else {
-                        val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, listOf("API Error: ${response.code()}"))
+                        val errorBody = response.errorBody()?.string()
+                        val msg = try {
+                            if (!errorBody.isNullOrBlank()) {
+                                val json = org.json.JSONObject(errorBody)
+                                json.optString("message", "API Error: ${response.code()}")
+                            } else "API Error: ${response.code()}"
+                        } catch (e: Exception) {
+                            "Server Error: ${response.code()}"
+                        }
+                        
+                        val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, listOf(msg))
                         adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
                         spinnerTime.adapter = adapter
                         spinnerTime.isEnabled = false
+                        
+                        // Show detailed error in toast for debugging
+                        Toast.makeText(ctx, "Debug: $msg", Toast.LENGTH_LONG).show()
                     }
                     updateMechanicSpinner()
                 }
@@ -527,9 +545,9 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
         spinnerTime.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
                 // Update Estimated Time text with the selected schedule time range
-                val selectedTime = spinnerTime.selectedItem?.toString()
-                if (selectedTime != null && !selectedTime.contains("first") && !selectedTime.contains("...")) {
-                    tvEstimatedTime.text = selectedTime
+                val selectedSlot = scheduleSlotsList.getOrNull(position)
+                if (selectedSlot != null && selectedSlot.available_mechanics_count > 0) {
+                    tvEstimatedTime.text = selectedSlot.display_time
                 } else {
                     tvEstimatedTime.text = "--"
                 }
@@ -586,9 +604,9 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
             val estimateVal = tvEstimate.text.toString().replace("\u20b1", "").replace(",", "").trim()
             val selectedAssgn = mechBaysList.getOrNull(spinnerAssignment.selectedItemPosition)
 
-            val selectedTime = spinnerTime.selectedItem?.toString()
-            if (selectedTime == null || selectedTime.contains("first") || selectedTime.contains("available") || scheduleSlotsList.isEmpty()) {
-                Toast.makeText(ctxInner, "Please select a valid schedule.", Toast.LENGTH_SHORT).show()
+            val selectedSlot = scheduleSlotsList.getOrNull(spinnerTime.selectedItemPosition)
+            if (selectedSlot == null || selectedSlot.available_mechanics_count <= 0) {
+                Toast.makeText(ctxInner, "Please select an available time slot.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -658,30 +676,44 @@ class GarageFragment : Fragment(R.layout.fragment_garage) {
         adapter = VehicleAdapter(emptyList()) { vehicle ->
             val vehicleId = vehicle.vehicle_id ?: return@VehicleAdapter
             
-            // Immediate UI update (Optimistic)
-            val currentList = adapter.getVehicles().toMutableList()
-            val removedItem = currentList.find { it.vehicle_id == vehicleId }
-            if (removedItem != null) {
-                currentList.remove(removedItem)
-                adapter.updateData(currentList)
-                emptyLayout.visibility = if (currentList.isEmpty()) View.VISIBLE else View.GONE
-            }
+            AlertDialog.Builder(ctx)
+                .setTitle("Remove Vehicle")
+                .setMessage("Are you sure you want to remove ${vehicle.make} ${vehicle.model}?")
+                .setPositiveButton("Remove") { _, _ ->
+                    // Immediate UI update (Optimistic)
+                    val currentList = adapter.getVehicles().toMutableList()
+                    val removedItem = currentList.find { it.vehicle_id == vehicleId }
+                    
+                    if (removedItem != null) {
+                        currentList.remove(removedItem)
+                        adapter.updateData(currentList)
+                        emptyLayout.visibility = if (currentList.isEmpty()) View.VISIBLE else View.GONE
+                    }
 
-            api.deleteVehicle(action = "remove_vehicle", tid = tid, customerId = sm.getCustomerId() ?: "", vehicleId = vehicleId)
-                .enqueue(object : Callback<BaseResponse> {
-                    override fun onResponse(call: Call<BaseResponse>, response: Response<BaseResponse>) {
-                        if (response.isSuccessful && response.body()?.status == "success") {
-                            // Success! No need to do anything as it's already removed from UI
-                        } else {
-                            // If it failed on server, tell the user why
-                            val msg = response.body()?.message ?: "Server sync failed"
-                            if (isAdded) Toast.makeText(ctx, "Database Error: $msg", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                    override fun onFailure(call: Call<BaseResponse>, t: Throwable) {
-                        if (isAdded) Toast.makeText(ctx, "Network Error: Could not reach database", Toast.LENGTH_SHORT).show()
-                    }
-                })
+                    api.deleteVehicle(action = "delete_vehicle_mobile", vehicleId = vehicleId, customerId = sm.getCustomerId() ?: "")
+                        .enqueue(object : Callback<BaseResponse> {
+                            override fun onResponse(call: Call<BaseResponse>, response: Response<BaseResponse>) {
+                                if (response.isSuccessful && response.body()?.status == "success") {
+                                    Toast.makeText(ctx, "Vehicle removed from garage", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    // REVERT if server failed
+                                    val msg = "HTTP ${response.code()}"
+                                    if (isAdded) {
+                                        Toast.makeText(ctx, "Error: $msg", Toast.LENGTH_LONG).show()
+                                        refreshGarage() 
+                                    }
+                                }
+                            }
+                            override fun onFailure(call: Call<BaseResponse>, t: Throwable) {
+                                if (isAdded) {
+                                    Toast.makeText(ctx, "Error: ${t.localizedMessage}", Toast.LENGTH_LONG).show()
+                                    refreshGarage() // Revert UI
+                                }
+                            }
+                        })
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
         }
         rv.layoutManager = LinearLayoutManager(ctx)
         rv.adapter = adapter

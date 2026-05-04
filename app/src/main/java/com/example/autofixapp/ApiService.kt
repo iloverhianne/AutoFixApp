@@ -84,7 +84,7 @@ interface ApiService {
     @POST("api-mobile.php")
     fun addVehicle(
         @Query("action") action: String = "add_vehicle",
-        @Query("tid") tid: String,
+        @Field("tid") tid: String,
         @Field("customer_id") customerId: String,
         @Field("plate_no") plateNo: String,
         @Field("make") make: String,
@@ -95,10 +95,9 @@ interface ApiService {
     @FormUrlEncoded
     @POST("api-mobile.php")
     fun deleteVehicle(
-        @Query("action") action: String = "remove_vehicle",
-        @Query("tid") tid: String,
-        @Field("customer_id") customerId: String,
-        @Field("vehicle_id") vehicleId: String
+        @Field("action") action: String = "delete_vehicle_mobile",
+        @Field("vehicle_id") vehicleId: String,
+        @Field("customer_id") customerId: String
     ): Call<BaseResponse>
 
     // 2.5.7 Loyalty & Rewards
@@ -187,15 +186,21 @@ data class BookedSlotsResponse(
 )
 
 data class ScheduleSlot(
-    val schedule_id: String,
-    val time_range: String,
-    val available_mechanics_count: Int
+    val schedule_id: Int,
+    val time_slot_id: Int,
+    val start_time: String,
+    val end_time: String,
+    val display_time: String,
+    val available_mechanics_count: Int,
+    val time_range: String // Kept for backward compatibility
 )
 
 data class SchedulesResponse(
-    val status: String,
+    val success: Boolean,
+    val status: String? = null,
     val message: String? = null,
-    val schedules: List<ScheduleSlot>?
+    val time_slots: List<ScheduleSlot>? = null,
+    val schedules: List<ScheduleSlot>? = null // Kept for backward compatibility
 )
 
 // Response Wrappers
