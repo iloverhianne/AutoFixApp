@@ -46,6 +46,14 @@ interface ApiService {
         @Query("tid") tenantId: String
     ): Call<MechanicsBaysResponse>
 
+    @GET("api-mobile.php")
+    fun getAvailableMechanics(
+        @Query("action") action: String = "get_available_mechanics",
+        @Query("tid") tenantId: String,
+        @Query("date") date: String,
+        @Query("time") time: String
+    ): Call<MechanicsBaysResponse>
+
     // 2.5.4 Repair Status Tracking
     @FormUrlEncoded
     @POST("api-mobile.php")

@@ -333,25 +333,67 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
         val selectedServiceNames = mutableListOf<String>()
 
         fun updateMechanicSpinner() {
-            // Show ALL mechanics without filtering by specialization
-            val displayList = allMechBaysList
-            
-            if (displayList.isEmpty()) {
-                // If really empty from server, show a message
-                val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, listOf("No Mechanics Available"))
+            val date = etDate.text.toString()
+            val time = spinnerTime.selectedItem?.toString()
+
+            if (date.isEmpty() || time.isNullOrEmpty()) {
+                val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, listOf("Select date and time first"))
                 adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
                 spinnerAssignment.adapter = adapter
+                spinnerAssignment.isEnabled = false
+                mechBaysList = emptyList()
                 return
             }
 
-            mechBaysList = displayList
-            val labels = displayList.map { it.first.full_name ?: "Mechanic" }
-            val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, labels)
-            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
-            spinnerAssignment.adapter = adapter
+            val loadingAdapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, listOf("Loading mechanics..."))
+            loadingAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+            spinnerAssignment.adapter = loadingAdapter
+            spinnerAssignment.isEnabled = false
+            mechBaysList = emptyList()
+
+            api.getAvailableMechanics(action = "get_available_mechanics", tenantId = tid, date = date, time = time).enqueue(object : Callback<MechanicsBaysResponse> {
+                override fun onResponse(call: Call<MechanicsBaysResponse>, response: Response<MechanicsBaysResponse>) {
+                    if (isAdded && response.isSuccessful) {
+                        val body = response.body()
+                        val list = mutableListOf<Pair<Mechanic, Bay>>()
+                        body?.mechanics?.forEachIndexed { i, m ->
+                            val b = body.bays?.getOrNull(i % (body.bays?.size ?: 1)) ?: Bay("0", "Any Bay")
+                            list.add(m to b)
+                        }
+                        
+                        if (list.isEmpty()) {
+                            val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, listOf("No mechanics available for the selected schedule"))
+                            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+                            spinnerAssignment.adapter = adapter
+                            spinnerAssignment.isEnabled = false
+                        } else {
+                            mechBaysList = list
+                            val labels = list.map { it.first.full_name ?: "Mechanic" }
+                            val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, labels)
+                            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+                            spinnerAssignment.adapter = adapter
+                            spinnerAssignment.isEnabled = true
+                        }
+                    } else {
+                        val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, listOf("Error loading mechanics"))
+                        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+                        spinnerAssignment.adapter = adapter
+                        spinnerAssignment.isEnabled = false
+                    }
+                }
+                override fun onFailure(call: Call<MechanicsBaysResponse>, t: Throwable) {
+                    if (isAdded) {
+                        val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, listOf("Network error"))
+                        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+                        spinnerAssignment.adapter = adapter
+                        spinnerAssignment.isEnabled = false
+                        Toast.makeText(ctx, "Failed to load mechanics", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            })
         }
 
-        // Initialize with Auto Assign immediately
+        // Initialize with default state
         updateMechanicSpinner()
 
         api.getServices(action = "get_services", tenantId = tid).enqueue(object : Callback<ServiceResponse> {
@@ -405,25 +447,7 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
             }
         })
 
-        // 4. Fetch Mechanics & Bays
-        api.getMechanicsAndBays(action = "get_mechanics_and_bays", tenantId = tid).enqueue(object : Callback<MechanicsBaysResponse> {
-            override fun onResponse(call: Call<MechanicsBaysResponse>, response: Response<MechanicsBaysResponse>) {
-                if (isAdded && response.isSuccessful) {
-                    val body = response.body()
-                    val list = mutableListOf<Pair<Mechanic, Bay>>()
-                    body?.mechanics?.forEachIndexed { i, m ->
-                        val b = body.bays?.getOrNull(i % (body.bays?.size ?: 1)) ?: Bay("0", "Any Bay")
-                        list.add(m to b)
-                    }
-                    if (list.isEmpty()) list.add(Mechanic("0", "Auto Assign", "") to Bay("0", "Any Bay"))
-                    allMechBaysList = list
-                    updateMechanicSpinner()
-                }
-            }
-            override fun onFailure(call: Call<MechanicsBaysResponse>, t: Throwable) {
-                if (isAdded) Toast.makeText(ctx, "Mechanics Offline: ${t.message}", Toast.LENGTH_SHORT).show()
-            }
-        })
+        // 4. Mechanic logic handled inside updateMechanicSpinner() which is triggered by date/time selection
 
         // 5. Time Slots
         val allTimeSlots = listOf("8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM")
@@ -450,6 +474,13 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
         val timeAdapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, allTimeSlots)
         timeAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
         spinnerTime.adapter = timeAdapter
+
+        spinnerTime.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
+                updateMechanicSpinner()
+            }
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+        }
 
         // 6. Date Picker
         etDate.setOnClickListener {
@@ -499,6 +530,11 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
 
             if (selectedServiceIds.isEmpty() || estimateVal.isEmpty() || estimateVal == "0.00") {
                 Toast.makeText(ctxInner, "Please select at least one service.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            
+            if (mechBaysList.isEmpty()) {
+                Toast.makeText(ctxInner, "Please select an available mechanic for the chosen schedule.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
