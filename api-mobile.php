@@ -86,18 +86,121 @@ try {
         exit;
     }
 
-    // --- 3.5. NEW: GET AVAILABLE MECHANICS (Filtering booked ones) ---
-    if ($action === 'get_available_mechanics' || $action === 'get_mechanics_and_bays') {
-        $date = $_GET['date'] ?? $_POST['date'] ?? date('Y-m-d');
-        $time = $_GET['time'] ?? $_POST['time'] ?? '';
+    // --- 3.1. NEW: GET SCHEDULES (Dynamic with duration and overlap check) ---
+    if ($action === 'get_schedules') {
+        $date = $_GET['date'] ?? $_POST['date'] ?? '';
+        $serviceIds = $_GET['service_id'] ?? $_POST['service_id'] ?? '';
 
-        $unavailableIds = [];
-        if ($time) {
-            $stmt = $db->prepare("SELECT DISTINCT mechanic_id FROM appointments WHERE tenant_id = ? AND appointment_date = ? AND appointment_time = ? AND status IN ('PENDING', 'CONFIRMED', 'ONGOING', 'APPROVED')");
-            $stmt->execute([$tid, $date, $time]);
-            $unavailableIds = array_filter($stmt->fetchAll(PDO::FETCH_COLUMN));
+        if (empty($date) || empty($serviceIds)) {
+            echo json_encode(['status' => 'error', 'message' => 'Date and Service are required']);
+            exit;
         }
 
+        // A. Calculate the total duration of the selected services
+        $durationMinutes = 60; 
+        $serviceArray = explode(',', $serviceIds);
+        if (count($serviceArray) > 0) {
+            $placeholders = implode(',', array_fill(0, count($serviceArray), '?'));
+            $serviceQuery = "SELECT SUM(COALESCE(duration_minutes, 60)) AS total_duration FROM services WHERE service_id IN ($placeholders) AND tenant_id = ?";
+            $stmt = $db->prepare($serviceQuery);
+            $params = array_merge($serviceArray, [$tid]);
+            $stmt->execute($params);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($row && !empty($row['total_duration'])) {
+                $durationMinutes = intval($row['total_duration']);
+            }
+        }
+
+        // B. Generate standard shop hours slots (e.g., 8:00 AM to 5:00 PM)
+        $startTime = strtotime("08:00:00");
+        $endTime = strtotime("17:00:00");
+        $interval = 60 * 60; // 1 hour intervals
+        
+        $availableSchedules = [];
+        $slotIdCounter = 1;
+
+        // Get total mechanics
+        $stmtM = $db->prepare("SELECT COUNT(*) as total FROM users u JOIN roles r ON u.role_id = r.role_id WHERE u.tenant_id = ? AND r.role_name = 'MECHANIC' AND u.status = 'ACTIVE'");
+        $stmtM->execute([$tid]);
+        $totalMechs = (int)$stmtM->fetchColumn();
+        
+        for ($t = $startTime; $t < $endTime; $t += $interval) {
+            $slotStart = date("h:i A", $t);
+            $slotEnd = date("h:i A", $t + ($durationMinutes * 60));
+            $timeRange = $slotStart . " - " . $slotEnd;
+            
+            $dbStart = date("H:i:s", $t);
+            $dbEnd = date("H:i:s", $t + ($durationMinutes * 60));
+            
+            $bookedMechsQuery = "
+                SELECT COUNT(DISTINCT mechanic_id) as booked
+                FROM appointments 
+                WHERE tenant_id = ? 
+                AND appointment_date = ? 
+                AND status IN ('PENDING', 'CONFIRMED', 'ONGOING', 'APPROVED')
+                AND (
+                    (TIME(appointment_time) <= ? AND TIME(COALESCE(estimated_end_time, ADDTIME(appointment_time, '01:00:00'))) > ?)
+                    OR
+                    (TIME(appointment_time) >= ? AND TIME(appointment_time) < ?)
+                )
+            ";
+            
+            $stmt3 = $db->prepare($bookedMechsQuery);
+            $stmt3->execute([$tid, $date, $dbStart, $dbStart, $dbStart, $dbEnd]);
+            $bookedMechs = (int)$stmt3->fetchColumn();
+            
+            $availableCount = $totalMechs - $bookedMechs;
+            
+            if ($availableCount > 0) {
+                $availableSchedules[] = [
+                    'schedule_id' => strval($slotIdCounter++),
+                    'time_range' => $timeRange,
+                    'available_mechanics_count' => $availableCount
+                ];
+            }
+        }
+
+        echo json_encode(['status' => 'success', 'schedules' => $availableSchedules]);
+        exit;
+    }
+
+    // --- 3.5. NEW: GET AVAILABLE MECHANICS (Filtering booked ones with overlap check) ---
+    if ($action === 'get_available_mechanics' || $action === 'get_mechanics_and_bays') {
+        $date = $_GET['date'] ?? $_POST['date'] ?? date('Y-m-d');
+        $timeRange = $_GET['time'] ?? $_POST['time'] ?? '';
+
+        $unavailableIds = [];
+        if ($timeRange) {
+            // Check if it's a range "9:00 AM - 10:00 AM" or a single time
+            if (strpos($timeRange, ' - ') !== false) {
+                $parts = explode(' - ', $timeRange);
+                $dbStart = date("H:i:s", strtotime($parts[0]));
+                $dbEnd = date("H:i:s", strtotime($parts[1] ?? $parts[0]));
+
+                $unavailableQuery = "
+                    SELECT DISTINCT mechanic_id 
+                    FROM appointments 
+                    WHERE tenant_id = ? 
+                    AND appointment_date = ? 
+                    AND status IN ('PENDING', 'CONFIRMED', 'ONGOING', 'APPROVED')
+                    AND (
+                        (TIME(appointment_time) <= ? AND TIME(COALESCE(estimated_end_time, ADDTIME(appointment_time, '01:00:00'))) > ?)
+                        OR
+                        (TIME(appointment_time) >= ? AND TIME(appointment_time) < ?)
+                    )
+                ";
+                $stmt = $db->prepare($unavailableQuery);
+                $stmt->execute([$tid, $date, $dbStart, $dbStart, $dbStart, $dbEnd]);
+                $unavailableIds = array_filter($stmt->fetchAll(PDO::FETCH_COLUMN));
+            } else {
+                // Fallback for simple time string
+                $stmt = $db->prepare("SELECT DISTINCT mechanic_id FROM appointments WHERE tenant_id = ? AND appointment_date = ? AND appointment_time = ? AND status IN ('PENDING', 'CONFIRMED', 'ONGOING', 'APPROVED')");
+                $stmt->execute([$tid, $date, $timeRange]);
+                $unavailableIds = array_filter($stmt->fetchAll(PDO::FETCH_COLUMN));
+            }
+        }
+
+        // Fetch available mechanics
         $query = "SELECT u.user_id as mechanic_id, u.name as full_name, r.role_name as specialization FROM users u JOIN roles r ON u.role_id = r.role_id WHERE u.tenant_id = ? AND r.role_name = 'MECHANIC' AND u.status = 'ACTIVE'";
         $params = [$tid];
 
@@ -111,6 +214,7 @@ try {
         $stmt->execute($params);
         $mechanics = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+        // Fetch bays
         $bays = [];
         try {
             $stmtB = $db->prepare("SELECT bay_id, name as bay_name FROM bays WHERE tenant_id = ?");
@@ -126,8 +230,15 @@ try {
 
     // --- 4. BOOKING EXECUTION ---
     if ($action === 'book_appointment') {
+        $appTime = $_POST['time'] ?? '';
+        // If time is a range (e.g. "9:00 AM - 10:00 AM"), extract only the start time for the database
+        if (strpos($appTime, ' - ') !== false) {
+            $parts = explode(' - ', $appTime);
+            $appTime = date("H:i:s", strtotime($parts[0]));
+        }
+        
         $stmt = $db->prepare("INSERT INTO appointments (tenant_id, customer_id, vehicle_id, service_id, mechanic_id, appointment_date, appointment_time, estimated_amount, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', NOW())");
-        $stmt->execute([$tid, $cid, $_POST['vehicle_id'], $_POST['service_id'], $_POST['mechanic_id'], $_POST['date'], $_POST['time'], $_POST['estimate']]);
+        $stmt->execute([$tid, $cid, $_POST['vehicle_id'], $_POST['service_id'], $_POST['mechanic_id'], $_POST['date'], $appTime, $_POST['estimate']]);
         echo json_encode(['status' => 'success', 'appointment_id' => $db->lastInsertId()]);
         exit;
     }
