@@ -35,8 +35,40 @@ class HistoryAdapter(private var repairs: List<RepairHistory>, private val onIte
         val repair = repairs[position]
         holder.tvName.text = "${repair.service_name ?: "Repair"} #${repair.job_id ?: "0"} (${repair.plate_no ?: "N/A"})"
         holder.tvStatus.text = repair.status?.uppercase() ?: "UNKNOWN"
-        holder.tvDate.text = if (!repair.time.isNullOrEmpty()) {
-            "${repair.date ?: "--"} · ${repair.time}"
+        val rawTime = repair.time
+        val formattedTime = if (!rawTime.isNullOrEmpty()) {
+            try {
+                if (rawTime.contains("AM", ignoreCase = true) || rawTime.contains("PM", ignoreCase = true)) {
+                    rawTime
+                } else {
+                    val parts = rawTime.split(":")
+                    if (parts.size >= 2) {
+                        var hour24 = parts[0].toInt()
+                        val minute = parts[1]
+                        
+                        // Smart Fix: If hour is 1-7, it's likely PM (Shop opens at 8AM)
+                        if (hour24 in 1..7) hour24 += 12
+                        
+                        val ampm = if (hour24 >= 12) "PM" else "AM"
+                        val hour12 = when {
+                            hour24 == 0 -> 12
+                            hour24 > 12 -> hour24 - 12
+                            else -> hour24
+                        }
+                        String.format("%02d:%s %s", hour12, minute, ampm)
+                    } else {
+                        rawTime
+                    }
+                }
+            } catch (e: Exception) {
+                rawTime
+            }
+        } else {
+            null
+        }
+
+        holder.tvDate.text = if (!formattedTime.isNullOrEmpty()) {
+            "${repair.date ?: "--"} · $formattedTime"
         } else {
             repair.date ?: "--"
         }

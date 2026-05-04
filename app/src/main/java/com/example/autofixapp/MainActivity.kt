@@ -78,76 +78,53 @@ class MainActivity : AppCompatActivity() {
             btnLogin.isEnabled = false
             btnLogin.text = "Logging in..."
 
-            // Add a safety timeout for the login process
-            val handler = Handler(Looper.getMainLooper())
+            val handler = android.os.Handler(android.os.Looper.getMainLooper())
             val timeoutRunnable = Runnable {
                 if (!btnLogin.isEnabled) {
                     btnLogin.isEnabled = true
                     btnLogin.text = "LOGIN TO MY ACCOUNT"
-                    Toast.makeText(this, "Login timed out. Please try again.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this@MainActivity, "Login timed out. Try again.", Toast.LENGTH_SHORT).show()
                 }
             }
-            handler.postDelayed(timeoutRunnable, 15000) // 15 second timeout
+            handler.postDelayed(timeoutRunnable, 20000)
 
-            // Use WebView as a proxy to handle firewall challenges
-            val loginWebView = WebView(this@MainActivity)
-            loginWebView.settings.javaScriptEnabled = true
-            loginWebView.settings.userAgentString = RetrofitClient.USER_AGENT
-            loginWebView.settings.domStorageEnabled = true
-            
-            val postData = "email=${java.net.URLEncoder.encode(email, "UTF-8")}&password=${java.net.URLEncoder.encode(password, "UTF-8")}&action=login"
-            
-            loginWebView.webViewClient = object : WebViewClient() {
-                override fun onPageFinished(view: WebView?, url: String?) {
-                    view?.evaluateJavascript("(document.getElementsByTagName('body')[0].innerText)") { jsonString ->
-                        handler.removeCallbacks(timeoutRunnable)
-                        if (btnLogin.isEnabled) return@evaluateJavascript // Already timed out
-                        
-                        btnLogin.isEnabled = true
-                        btnLogin.text = "LOGIN TO MY ACCOUNT"
-                        
-                        try {
-                            val cleanJson = jsonString?.removeSurrounding("\"")
-                                ?.replace("\\\"", "\"")
-                                ?.replace("\\\\", "\\")
-                                ?.trim()
-                            
-                            if (cleanJson.isNullOrBlank() || !cleanJson.startsWith("{")) {
-                                if (cleanJson?.contains("403") == true || cleanJson?.contains("Forbidden") == true) {
-                                    Toast.makeText(this@MainActivity, "Firewall active. Retrying...", Toast.LENGTH_SHORT).show()
-                                    // Trigger a fresh unlock
-                                    view.loadUrl("https://multi-tenant.ct.ws/api-mobile.php?action=login")
-                                } else {
-                                    Toast.makeText(this@MainActivity, "Connection Error. Please try again.", Toast.LENGTH_SHORT).show()
-                                }
-                                return@evaluateJavascript
-                            }
-
-                            val response = com.google.gson.Gson().fromJson(cleanJson, LoginResponse::class.java)
-                            if (response?.status == "success") {
-                                if (response.shops != null && response.shops.size > 1) {
-                                    showShopSelector(response)
-                                } else {
-                                    proceedToDashboard(response.customer_id ?: "", response.name ?: "User", response.email ?: "", response.tenant_id ?: "1", response.shop_name ?: "AutoFix Shop", response.role ?: "CUSTOMER")
-                                }
-                            } else {
-                                Toast.makeText(this@MainActivity, response?.message ?: "Invalid credentials", Toast.LENGTH_SHORT).show()
-                            }
-                        } catch (e: Exception) {
-                            Toast.makeText(this@MainActivity, "System Busy. Try again.", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                }
-
-                override fun onReceivedError(view: WebView?, request: android.webkit.WebResourceRequest?, error: android.webkit.WebResourceError?) {
+            val apiService = RetrofitClient.getApiService(this@MainActivity)
+            apiService.login(action = "login", email = email, password = password).enqueue(object : Callback<LoginResponse> {
+                override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
                     handler.removeCallbacks(timeoutRunnable)
                     btnLogin.isEnabled = true
                     btnLogin.text = "LOGIN TO MY ACCOUNT"
-                    Toast.makeText(this@MainActivity, "Network error. Check your connection.", Toast.LENGTH_SHORT).show()
+
+                    if (response.isSuccessful && response.body() != null) {
+                        val loginRes = response.body()!!
+                        if (loginRes.status == "success") {
+                            if (loginRes.shops != null && loginRes.shops.size > 1) {
+                                showShopSelector(loginRes)
+                            } else {
+                                proceedToDashboard(
+                                    loginRes.customer_id ?: "",
+                                    loginRes.name ?: "User",
+                                    loginRes.email ?: email,
+                                    loginRes.tenant_id ?: "1",
+                                    loginRes.shop_name ?: "AutoFix Shop",
+                                    loginRes.role ?: "CUSTOMER"
+                                )
+                            }
+                        } else {
+                            Toast.makeText(this@MainActivity, loginRes.message ?: "Invalid Credentials", Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        Toast.makeText(this@MainActivity, "Server Error: ${response.code()}", Toast.LENGTH_SHORT).show()
+                    }
                 }
-            }
-            
-            loginWebView.postUrl("https://multi-tenant.ct.ws/api-mobile.php?action=login", postData.toByteArray())
+
+                override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
+                    handler.removeCallbacks(timeoutRunnable)
+                    btnLogin.isEnabled = true
+                    btnLogin.text = "LOGIN TO MY ACCOUNT"
+                    Toast.makeText(this@MainActivity, "Connection Failed: ${t.message}", Toast.LENGTH_LONG).show()
+                }
+            })
         }
     }
 

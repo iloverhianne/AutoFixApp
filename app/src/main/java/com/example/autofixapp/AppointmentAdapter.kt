@@ -30,7 +30,39 @@ class AppointmentAdapter(private var appointments: List<RepairHistory>) :
         holder.tvName.text = appt.service_name ?: "Service"
         holder.tvStatus.text = appt.status?.uppercase() ?: "PENDING"
         holder.tvDate.text = appt.date ?: "--"
-        holder.tvTime.text = appt.time ?: "08:00 AM"
+        val rawTime = appt.time
+        val formattedTime = if (!rawTime.isNullOrEmpty()) {
+            try {
+                if (rawTime.contains("AM", ignoreCase = true) || rawTime.contains("PM", ignoreCase = true)) {
+                    rawTime
+                } else {
+                    val parts = rawTime.split(":")
+                    if (parts.size >= 2) {
+                        var hour24 = parts[0].toInt()
+                        val minute = parts[1]
+
+                        // Smart Fix: If hour is 1-7, it's likely PM (Shop opens at 8AM)
+                        if (hour24 in 1..7) hour24 += 12
+
+                        val ampm = if (hour24 >= 12) "PM" else "AM"
+                        val hour12 = when {
+                            hour24 == 0 -> 12
+                            hour24 > 12 -> hour24 - 12
+                            else -> hour24
+                        }
+                        String.format("%02d:%s %s", hour12, minute, ampm)
+                    } else {
+                        rawTime
+                    }
+                }
+            } catch (e: Exception) {
+                rawTime
+            }
+        } else {
+            "08:00 AM"
+        }
+
+        holder.tvTime.text = formattedTime
         holder.tvEstimate.text = "₱${appt.total_amount ?: "0.00"}"
         
         val context = holder.itemView.context

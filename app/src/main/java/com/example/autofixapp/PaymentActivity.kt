@@ -142,7 +142,7 @@ class PaymentActivity : AppCompatActivity() {
         val tid = sessionManager.getTenantId() ?: "1"
         val cid = sessionManager.getCustomerId() ?: ""
         
-        apiService.getLoyaltyStatus(tid, cid).enqueue(object : Callback<LoyaltyResponse> {
+        apiService.getLoyaltyStatus(action = "loyalty_status", tenantId = tid, customerId = cid).enqueue(object : Callback<LoyaltyResponse> {
             override fun onResponse(call: Call<LoyaltyResponse>, response: Response<LoyaltyResponse>) {
                 if (response.isSuccessful) {
                     userPoints = response.body()?.points ?: 0
@@ -299,7 +299,7 @@ class PaymentActivity : AppCompatActivity() {
         val cid = sessionManager.getCustomerId() ?: ""
         val method = if (rbGcash.isChecked) "GCash" else "Card"
         
-        apiService.recordPayment(tid, cid, String.format("%.2f", amountToPay), "BALANCE", method, jobId)
+        apiService.recordPayment(action = "record_payment", tenantId = tid, customerId = cid, amount = String.format("%.2f", amountToPay), type = "BALANCE", method = method, refId = jobId)
             .enqueue(object : Callback<BaseResponse> {
                 override fun onResponse(call: Call<BaseResponse>, response: Response<BaseResponse>) {
                     loadingOverlay.visibility = View.GONE
@@ -324,14 +324,33 @@ class PaymentActivity : AppCompatActivity() {
         val customerId = sessionManager.getCustomerId() ?: ""
 
         val estimateStr = String.format("%.2f", fullAmount)
+        
+        // Convert "2:00 PM" to "14:00:00" for server compatibility
+        val time24 = try {
+            val parts = time?.split(" ")
+            if (parts?.size == 2) {
+                val tParts = parts[0].split(":")
+                var h = tParts[0].toInt()
+                val m = tParts[1]
+                val isPm = parts[1].equals("PM", ignoreCase = true)
+                if (isPm && h < 12) h += 12
+                if (!isPm && h == 12) h = 0
+                String.format("%02d:%s:00", h, m)
+            } else {
+                time ?: "08:00:00"
+            }
+        } catch (e: Exception) {
+            time ?: "08:00:00"
+        }
 
         apiService.bookAppointment(
-            tenantIdQuery = tid,
+            action = "book_appointment",
+            tenantId = tid,
             customerId = customerId,
             serviceId = serviceId,
             vehicleId = vehicleId,
             date = date,
-            time = time,
+            time = time24,
             estimate = estimateStr,
             mechanicId = mechanicId,
             bayId = bayId
@@ -352,7 +371,8 @@ class PaymentActivity : AppCompatActivity() {
 
                     // Record payment in background to ensure it reflects on Web Dashboard
                     apiService.recordPayment(
-                        tenantIdQuery = tid,
+                        action = "record_payment",
+                        tenantId = tid,
                         customerId = customerId,
                         amount = String.format("%.2f", amountToPay),
                         type = payType,

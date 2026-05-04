@@ -104,31 +104,104 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         // Update User Name
         view.findViewById<TextView>(R.id.tvWelcomeName).text = "Hi, ${sm.getCustomerName() ?: "Hershey"}!"
 
-        // 1. Fetch Loyalty Points
+        // 1. Fetch Loyalty Points & Promos
         val tvPoints = view.findViewById<TextView>(R.id.tvLoyaltyPoints)
         val tvTier = view.findViewById<TextView>(R.id.tvLoyaltyTier)
+        val layoutPromos = view.findViewById<LinearLayout>(R.id.layoutPromos)
         
-        api.getLoyaltyStatus(tid, cid).enqueue(object : Callback<LoyaltyResponse> {
+        api.getLoyaltyStatus(action = "loyalty_status", tenantId = tid, customerId = cid).enqueue(object : Callback<LoyaltyResponse> {
             override fun onResponse(call: Call<LoyaltyResponse>, response: Response<LoyaltyResponse>) {
-                if (isAdded && response.isSuccessful) {
+                if (isAdded) {
                     val body = response.body()
-                    tvPoints.text = (body?.points ?: 0).toString()
-                    tvTier.text = body?.tier ?: "BRONZE MEMBER"
+                    if (response.isSuccessful && body != null) {
+                        tvPoints.text = body.points.toString()
+                        tvTier.text = (body.tier ?: "BRONZE MEMBER").uppercase()
+                        
+                        // Handle Dynamic Promos
+                        val promos = body.available_promos
+                        if (promos != null && promos.isNotEmpty()) {
+                            layoutPromos.removeAllViews()
+                            promos.forEach { promo ->
+                                val promoCard = LayoutInflater.from(ctx).inflate(R.layout.fragment_home, null)
+                                // Note: We need a dedicated layout for promo items if we want it perfect, 
+                                // but for now we'll just use the hardcoded structure if no dynamic ones are found.
+                                // Actually, let's keep the hardcoded ones if dynamic list is empty, 
+                                // or create them dynamically if they exist.
+                                addPromoCard(layoutPromos, promo.title ?: "PROMO", promo.description ?: "", promo.discount ?: "")
+                            }
+                        }
+                    }
                 }
             }
-            override fun onFailure(call: Call<LoyaltyResponse>, t: Throwable) {}
+            override fun onFailure(call: Call<LoyaltyResponse>, t: Throwable) {
+                if (isAdded) {
+                    tvPoints.text = "0"
+                    tvTier.text = "BRONZE MEMBER"
+                }
+            }
+            
+            private fun addPromoCard(container: LinearLayout, title: String, desc: String, discount: String) {
+                val card = androidx.cardview.widget.CardView(ctx).apply {
+                    layoutParams = LinearLayout.LayoutParams(
+                        (260 * resources.displayMetrics.density).toInt(),
+                        (140 * resources.displayMetrics.density).toInt()
+                    ).apply { marginEnd = (16 * resources.displayMetrics.density).toInt() }
+                    radius = 20 * resources.displayMetrics.density
+                    cardElevation = 0f
+                    setCardBackgroundColor(android.graphics.Color.parseColor("#1A10B981"))
+                }
+                
+                val inner = LinearLayout(ctx).apply {
+                    orientation = LinearLayout.VERTICAL
+                    setPadding(20, 20, 20, 20)
+                    gravity = android.view.Gravity.CENTER_VERTICAL
+                }
+                
+                val tvTitle = TextView(ctx).apply {
+                    text = title
+                    setTextColor(android.graphics.Color.parseColor("#10B981"))
+                    textSize = 24f
+                    setTypeface(null, android.graphics.Typeface.BOLD)
+                }
+                
+                val tvDesc = TextView(ctx).apply {
+                    text = desc
+                    setTextColor(android.graphics.Color.WHITE)
+                    textSize = 14f
+                    val params = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply { topMargin = 4 }
+                    layoutParams = params
+                }
+                
+                inner.addView(tvTitle)
+                inner.addView(tvDesc)
+                card.addView(inner)
+                container.addView(card)
+            }
         })
 
         // 2. Fetch Wait Time
         val tvWaitTime = view.findViewById<TextView>(R.id.tvHomeWaitTime)
-        api.getAvailability(tid).enqueue(object : Callback<AvailabilityResponse> {
+        api.getAvailability(action = "get_availability", tenantId = tid).enqueue(object : Callback<AvailabilityResponse> {
             override fun onResponse(call: Call<AvailabilityResponse>, response: Response<AvailabilityResponse>) {
-                if (isAdded && response.isSuccessful) {
-                    tvWaitTime.text = response.body()?.waiting_time ?: "Ready Now"
+                if (isAdded) {
+                    if (response.isSuccessful) {
+                        val wait = response.body()?.waiting_time
+                        tvWaitTime.text = if (wait.isNullOrBlank()) "Ready Now" else wait
+                        tvWaitTime.setTextColor(resources.getColor(R.color.warning_orange, null))
+                    } else {
+                        tvWaitTime.text = "Unavailable"
+                    }
                 }
             }
             override fun onFailure(call: Call<AvailabilityResponse>, t: Throwable) {
-                if (isAdded) tvWaitTime.text = "Offline"
+                if (isAdded) {
+                    tvWaitTime.text = "Offline (${t.message?.take(15)})"
+                    tvWaitTime.setTextColor(resources.getColor(R.color.error_red, null))
+                    android.util.Log.e("AutoFixAPI", "Availability Failure", t)
+                }
             }
         })
 
@@ -136,36 +209,59 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         val grid = view.findViewById<android.widget.GridLayout>(R.id.gridServices)
         val tvNoServices = view.findViewById<TextView>(R.id.tvNoServices)
         
-        api.getServices(tid).enqueue(object : Callback<ServiceResponse> {
+        api.getServices(action = "get_services", tenantId = tid).enqueue(object : Callback<ServiceResponse> {
             override fun onResponse(call: Call<ServiceResponse>, response: Response<ServiceResponse>) {
-                if (isAdded && response.isSuccessful) {
-                    val services = response.body()?.data ?: emptyList()
-                    if (services.isNotEmpty()) {
-                        grid.visibility = View.VISIBLE
-                        tvNoServices.visibility = View.GONE
-                        grid.removeAllViews()
-                        
-                        services.take(4).forEach { service ->
-                            val card: View = LayoutInflater.from(ctx).inflate(R.layout.item_service_home, grid, false)
-                            val tvName = card.findViewById<TextView>(R.id.tvServiceNameHome)
-                            val tvPrice = card.findViewById<TextView>(R.id.tvServicePriceHome)
+                if (isAdded) {
+                    if (response.isSuccessful) {
+                        val services = response.body()?.data ?: emptyList()
+                        if (services.isNotEmpty()) {
+                            grid.visibility = View.VISIBLE
+                            tvNoServices.visibility = View.GONE
+                            grid.removeAllViews()
                             
-                            tvName.text = service.service_name
-                            tvPrice.text = "Start at \u20b1${service.price}"
-                            
-                            val params = android.widget.GridLayout.LayoutParams()
-                            params.width = 0
-                            params.height = android.widget.GridLayout.LayoutParams.WRAP_CONTENT
-                            params.columnSpec = android.widget.GridLayout.spec(android.widget.GridLayout.UNDEFINED, 1f)
-                            card.layoutParams = params
-                            
-                            grid.addView(card)
+                            // Show all services (not just 4)
+                            services.forEach { service ->
+                                val card: View = LayoutInflater.from(ctx).inflate(R.layout.item_service_home, grid, false)
+                                val tvName = card.findViewById<TextView>(R.id.tvServiceNameHome)
+                                val tvPrice = card.findViewById<TextView>(R.id.tvServicePriceHome)
+                                
+                                tvName.text = service.service_name
+                                tvPrice.text = "Start at \u20b1${service.price}"
+                                
+                                val params = android.widget.GridLayout.LayoutParams()
+                                params.width = android.widget.GridLayout.LayoutParams.MATCH_PARENT
+                                params.height = android.widget.GridLayout.LayoutParams.WRAP_CONTENT
+                                params.setMargins(0, 0, 0, 16)
+                                card.layoutParams = params
+                                
+                                grid.addView(card)
+                            }
+                        } else {
+                            tvNoServices.text = "No services found in database"
+                            tvNoServices.visibility = View.VISIBLE
                         }
+                    } else {
+                        tvNoServices.text = "Error connecting to service catalog"
+                        tvNoServices.visibility = View.VISIBLE
                     }
                 }
             }
-            override fun onFailure(call: Call<ServiceResponse>, t: Throwable) {}
+            override fun onFailure(call: Call<ServiceResponse>, t: Throwable) {
+                if (isAdded) {
+                    tvNoServices.text = "Connection Error: Check internet"
+                    tvNoServices.visibility = View.VISIBLE
+                }
+            }
         })
+
+        // 4. Promo Click Listeners
+        val navigateToBooking = {
+            (activity as? HomeActivity)?.findViewById<BottomNavigationView>(R.id.bottom_navigation)?.selectedItemId = R.id.nav_book
+            (activity as? HomeActivity)?.loadFragment(BookingFragment())
+        }
+
+        view.findViewById<View>(R.id.cardPromo1)?.setOnClickListener { navigateToBooking() }
+        view.findViewById<View>(R.id.cardPromo2)?.setOnClickListener { navigateToBooking() }
 
         // Logout Shortcut
         view.findViewById<ImageView>(R.id.btnLogout).setOnClickListener {
@@ -202,7 +298,7 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
         val btnSubmit = view.findViewById<Button>(R.id.btnSubmitBooking)
 
         // 1. Fetch Availability
-        api.getAvailability(tid).enqueue(object : Callback<AvailabilityResponse> {
+        api.getAvailability(action = "get_availability", tenantId = tid).enqueue(object : Callback<AvailabilityResponse> {
             override fun onResponse(call: Call<AvailabilityResponse>, response: Response<AvailabilityResponse>) {
                 if (isAdded && response.isSuccessful) {
                     val b = response.body()
@@ -212,12 +308,12 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                 }
             }
             override fun onFailure(call: Call<AvailabilityResponse>, t: Throwable) {
-                if (isAdded) Toast.makeText(ctx, "Availability Info Offline", Toast.LENGTH_SHORT).show()
+                if (isAdded) Toast.makeText(ctx, "Availability Offline: ${t.message}", Toast.LENGTH_LONG).show()
             }
         })
 
         // 2. Fetch Garage
-        api.getGarage(tid, sm.getCustomerId() ?: "").enqueue(object : Callback<GarageResponse> {
+        api.getGarage(action = "get_garage", tenantId = tid, customerId = sm.getCustomerId() ?: "").enqueue(object : Callback<GarageResponse> {
             override fun onResponse(call: Call<GarageResponse>, response: Response<GarageResponse>) {
                 if (isAdded && response.isSuccessful) {
                     vehicleList = response.body()?.data ?: emptyList()
@@ -233,15 +329,40 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
         })
 
         // 3. Fetch Services
-        var selectedServiceIds = mutableListOf<String>()
-        var selectedServiceNames = mutableListOf<String>()
+        val selectedServiceIds = mutableListOf<String>()
+        val selectedServiceNames = mutableListOf<String>()
 
-        api.getServices(tid).enqueue(object : Callback<ServiceResponse> {
+        fun updateMechanicSpinner() {
+            // Show ALL mechanics without filtering by specialization
+            val displayList = allMechBaysList
+            
+            if (displayList.isEmpty()) {
+                // If really empty from server, show a message
+                val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, listOf("No Mechanics Available"))
+                adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+                spinnerAssignment.adapter = adapter
+                return
+            }
+
+            mechBaysList = displayList
+            val labels = displayList.map { it.first.full_name ?: "Mechanic" }
+            val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, labels)
+            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+            spinnerAssignment.adapter = adapter
+        }
+
+        // Initialize with Auto Assign immediately
+        updateMechanicSpinner()
+
+        api.getServices(action = "get_services", tenantId = tid).enqueue(object : Callback<ServiceResponse> {
             override fun onResponse(call: Call<ServiceResponse>, response: Response<ServiceResponse>) {
                 if (isAdded && response.isSuccessful) {
                     servicesList = response.body()?.data ?: emptyList()
                     tvSelectServices.setOnClickListener {
-                        if (servicesList.isEmpty()) return@setOnClickListener
+                        if (servicesList.isEmpty()) {
+                            Toast.makeText(ctx, "Services not loaded. Check server.", Toast.LENGTH_SHORT).show()
+                            return@setOnClickListener
+                        }
                         
                         val dialogView = LayoutInflater.from(ctx).inflate(R.layout.dialog_services_select, null)
                         val rv = dialogView.findViewById<RecyclerView>(R.id.rvServicesSelect)
@@ -249,17 +370,12 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                         val btnCancel = dialogView.findViewById<Button>(R.id.btnCancelServices)
                         
                         val tempIds = selectedServiceIds.toMutableList()
-                        
                         rv.layoutManager = LinearLayoutManager(ctx)
                         rv.adapter = ServicesSelectAdapter(servicesList, tempIds) { id, isChecked ->
-                            if (isChecked) if (!tempIds.contains(id)) tempIds.add(id) else {}
-                            else tempIds.remove(id)
+                            if (isChecked) tempIds.add(id) else tempIds.remove(id)
                         }
                         
-                        val dialog = AlertDialog.Builder(ctx, R.style.CustomDialog)
-                            .setView(dialogView)
-                            .create()
-                            
+                        val dialog = AlertDialog.Builder(ctx, R.style.CustomDialog).setView(dialogView).create()
                         btnApply.setOnClickListener {
                             selectedServiceIds.clear()
                             selectedServiceIds.addAll(tempIds)
@@ -267,15 +383,15 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                             var total = 0.0
                             for (s in servicesList) {
                                 if (selectedServiceIds.contains(s.service_id ?: "")) {
-                                    selectedServiceNames.add(s.service_name ?: "Unknown Service")
+                                    selectedServiceNames.add(s.service_name ?: "")
                                     total += s.price?.replace(",", "")?.toDoubleOrNull() ?: 0.0
                                 }
                             }
                             tvSelectServices.text = if (selectedServiceNames.isEmpty()) "Choose Services..." else selectedServiceNames.joinToString(", ")
                             tvEstimate.text = String.format("\u20b1%.2f", total)
+                            updateMechanicSpinner()
                             dialog.dismiss()
                         }
-                        
                         btnCancel.setOnClickListener { dialog.dismiss() }
                         dialog.show()
                         
@@ -290,59 +406,45 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
         })
 
         // 4. Fetch Mechanics & Bays
-        api.getMechanicsAndBays(tid).enqueue(object : Callback<MechanicsBaysResponse> {
+        api.getMechanicsAndBays(action = "get_mechanics_and_bays", tenantId = tid).enqueue(object : Callback<MechanicsBaysResponse> {
             override fun onResponse(call: Call<MechanicsBaysResponse>, response: Response<MechanicsBaysResponse>) {
                 if (isAdded && response.isSuccessful) {
                     val body = response.body()
                     val list = mutableListOf<Pair<Mechanic, Bay>>()
-                    
-                    body?.mechanics?.let { mechanics ->
-                        if (mechanics.isNotEmpty()) {
-                            mechanics.forEachIndexed { i, m ->
-                                val b = body.bays?.getOrNull(i % (body.bays?.size ?: 1)) ?: Bay("0", "Any Bay")
-                                list.add(m to b)
-                            }
-                        } else {
-                            list.add(Mechanic("0", "Auto Assign", "") to Bay("0", "Any Bay"))
-                        }
-                    } ?: run {
-                        list.add(Mechanic("0", "Auto Assign", "") to Bay("0", "Any Bay"))
+                    body?.mechanics?.forEachIndexed { i, m ->
+                        val b = body.bays?.getOrNull(i % (body.bays?.size ?: 1)) ?: Bay("0", "Any Bay")
+                        list.add(m to b)
                     }
-
+                    if (list.isEmpty()) list.add(Mechanic("0", "Auto Assign", "") to Bay("0", "Any Bay"))
                     allMechBaysList = list
-                    mechBaysList = list
-                    val labels = list.map { it.first.full_name }
-                    val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, labels)
-                    adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
-                    spinnerAssignment.adapter = adapter
+                    updateMechanicSpinner()
                 }
             }
-            override fun onFailure(call: Call<MechanicsBaysResponse>, t: Throwable) {}
+            override fun onFailure(call: Call<MechanicsBaysResponse>, t: Throwable) {
+                if (isAdded) Toast.makeText(ctx, "Mechanics Offline: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
         })
 
         // 5. Time Slots
         val allTimeSlots = listOf("8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM")
         
-        fun updateMechanicSpinner() {
-            val selectedDate = etDate.text.toString()
-            val selectedTime = spinnerTime.selectedItem?.toString()
-            if (selectedDate.isNotEmpty() && selectedTime != null) {
-                val sp = ctx.getSharedPreferences("LocalBookings", android.content.Context.MODE_PRIVATE)
-                val bookedMechId = sp.getString("booked_mech_${selectedDate}_${selectedTime}", null)
-                val bookedMechName = sp.getString("booked_mech_name_${selectedDate}_${selectedTime}", null)
-                
-                mechBaysList = allMechBaysList.filter { 
-                     val isSameId = bookedMechId != null && it.first.mechanic_id == bookedMechId && it.first.mechanic_id != "0"
-                     val isSameName = bookedMechName != null && it.first.full_name == bookedMechName
-                     !(isSameId || isSameName)
+        fun updateTimeSlots() {
+            val date = etDate.text.toString()
+            if (date.isEmpty()) return
+            api.getBookedSlots(action = "get_booked_slots", tenantId = tid, date = date).enqueue(object : Callback<BookedSlotsResponse> {
+                override fun onResponse(call: Call<BookedSlotsResponse>, response: Response<BookedSlotsResponse>) {
+                    if (isAdded && response.isSuccessful) {
+                        val booked = response.body()?.booked_slots ?: emptyList()
+                        val available = allTimeSlots.filter { !booked.contains(it) }
+                        val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, available)
+                        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+                        spinnerTime.adapter = adapter
+                    }
                 }
-            } else {
-                mechBaysList = allMechBaysList
-            }
-            val labels = mechBaysList.map { it.first.full_name }
-            val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, labels)
-            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
-            spinnerAssignment.adapter = adapter
+                override fun onFailure(call: Call<BookedSlotsResponse>, t: Throwable) {
+                    if (isAdded) Toast.makeText(ctx, "Slots Offline: ${t.message}", Toast.LENGTH_SHORT).show()
+                }
+            })
         }
 
         val timeAdapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, allTimeSlots)
@@ -352,19 +454,12 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
         // 6. Date Picker
         etDate.setOnClickListener {
             val c = java.util.Calendar.getInstance()
-            val year = c.get(java.util.Calendar.YEAR)
-            val month = c.get(java.util.Calendar.MONTH)
-            val day = c.get(java.util.Calendar.DAY_OF_MONTH)
-
             val dpd = android.app.DatePickerDialog(ctx, { _, y, m, d ->
-                val chosen = java.util.Calendar.getInstance()
-                chosen.set(y, m, d, 0, 0, 0)
-                selectedCalendar = chosen
                 val dateStr = String.format("%04d-%02d-%02d", y, m + 1, d)
                 etDate.setText(dateStr)
+                updateTimeSlots()
                 updateMechanicSpinner()
-            }, year, month, day)
-
+            }, c.get(java.util.Calendar.YEAR), c.get(java.util.Calendar.MONTH), c.get(java.util.Calendar.DAY_OF_MONTH))
             dpd.datePicker.minDate = c.timeInMillis
             dpd.show()
         }
@@ -447,7 +542,7 @@ class GarageFragment : Fragment(R.layout.fragment_garage) {
         val btnAdd = view.findViewById<View>(R.id.btnAddVehicle)
 
         fun refreshGarage() {
-            api.getGarage(tid, sm.getCustomerId() ?: "").enqueue(object : Callback<GarageResponse> {
+            api.getGarage(action = "get_garage", tenantId = tid, customerId = sm.getCustomerId() ?: "").enqueue(object : Callback<GarageResponse> {
                 override fun onResponse(call: Call<GarageResponse>, response: Response<GarageResponse>) {
                     if (isAdded && response.isSuccessful) {
                         val list = response.body()?.data ?: emptyList()
@@ -471,7 +566,7 @@ class GarageFragment : Fragment(R.layout.fragment_garage) {
                 emptyLayout.visibility = if (currentList.isEmpty()) View.VISIBLE else View.GONE
             }
 
-            api.deleteVehicle(tidQuery = tid, customerId = sm.getCustomerId() ?: "", vehicleId = vehicleId)
+            api.deleteVehicle(action = "remove_vehicle", tid = tid, customerId = sm.getCustomerId() ?: "", vehicleId = vehicleId)
                 .enqueue(object : Callback<BaseResponse> {
                     override fun onResponse(call: Call<BaseResponse>, response: Response<BaseResponse>) {
                         if (response.isSuccessful && response.body()?.status == "success") {
@@ -520,7 +615,7 @@ class GarageFragment : Fragment(R.layout.fragment_garage) {
                     return@setOnClickListener
                 }
 
-                api.addVehicle(tid, "add_vehicle", sm.getCustomerId() ?: "", plate, make, model, year)
+                api.addVehicle(action = "add_vehicle", tid = tid, customerId = sm.getCustomerId() ?: "", plateNo = plate, make = make, model = model, year = year)
                     .enqueue(object : Callback<BaseResponse> {
                         override fun onResponse(call: Call<BaseResponse>, response: Response<BaseResponse>) {
                             if (isAdded && response.isSuccessful && response.body()?.status == "success") {
@@ -581,12 +676,13 @@ class HistoryFragment : Fragment(R.layout.fragment_history) {
             rvPay.visibility = if (checkedId == R.id.rbPayments) View.VISIBLE else View.GONE
         }
 
-        api.getHistory(sm.getTenantId() ?: "1", sm.getCustomerId() ?: "").enqueue(object : Callback<HistoryResponse> {
+        api.getHistory(action = "get_history", tenantId = sm.getTenantId() ?: "1", customerId = sm.getCustomerId() ?: "").enqueue(object : Callback<HistoryResponse> {
             override fun onResponse(call: Call<HistoryResponse>, response: Response<HistoryResponse>) {
                 if (isAdded && response.isSuccessful) {
                     val body = response.body()
-                    apptAdapter.updateData(body?.bookings ?: emptyList())
-                    repairAdapter.updateData(body?.services ?: emptyList())
+                    val repairList = body?.repairs ?: emptyList()
+                    apptAdapter.updateData(repairList)
+                    repairAdapter.updateData(repairList)
                     body?.payments?.let { payAdapter.updateData(it) }
                 }
             }
@@ -622,7 +718,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
             val jobId = etJobId.text.toString().trim()
             if (jobId.isEmpty()) return@setOnClickListener
 
-            api.trackRepair(sm.getTenantId() ?: "1", jobId, sm.getCustomerId() ?: "")
+            api.trackRepair(action = "track_repair", tenantId = sm.getTenantId() ?: "1", jobId = jobId, customerId = sm.getCustomerId() ?: "")
                 .enqueue(object : Callback<TrackingResponse> {
                     override fun onResponse(call: Call<TrackingResponse>, response: Response<TrackingResponse>) {
                         if (isAdded && response.isSuccessful && response.body()?.status == "success") {

@@ -176,9 +176,13 @@
 
                     <!-- Promo Card 1 -->
                     <androidx.cardview.widget.CardView
+                        android:id="@+id/cardPromo1"
                         android:layout_width="260dp"
                         android:layout_height="140dp"
                         android:layout_marginEnd="16dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
                         app:cardBackgroundColor="#1A10B981"
                         app:cardCornerRadius="20dp"
                         app:cardElevation="0dp">
@@ -212,8 +216,12 @@
 
                     <!-- Promo Card 2 -->
                     <androidx.cardview.widget.CardView
+                        android:id="@+id/cardPromo2"
                         android:layout_width="260dp"
                         android:layout_height="140dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
                         app:cardBackgroundColor="#1A06B6D4"
                         app:cardCornerRadius="20dp"
                         app:cardElevation="0dp">
