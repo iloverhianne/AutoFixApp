@@ -27,8 +27,21 @@ if (isset($_REQUEST['action']) && ($_REQUEST['action'] === 'delete_vehicle_mobil
     try {
         require_once 'db-config.php';
         $db = getDB();
-        $vid = $_REQUEST['vehicle_id'] ?? '';
+        $vid = $_REQUEST['vehicleId'] ?? $_REQUEST['vehicle_id'] ?? '';
+        $cidParam = $_REQUEST['customerId'] ?? $_REQUEST['customer_id'] ?? '';
+        
         if ($vid) {
+            // Soft delete first
+            try {
+                $stmt = $db->prepare("UPDATE vehicles SET status = 'DELETED' WHERE vehicle_id = ?");
+                $stmt->execute([$vid]);
+                if ($stmt->rowCount() > 0) {
+                    echo json_encode(['status' => 'success', 'message' => 'Deleted (Soft)']);
+                    exit;
+                }
+            } catch (Exception $ex) {}
+            
+            // Hard delete fallback
             $stmt = $db->prepare("DELETE FROM vehicles WHERE vehicle_id = ?");
             $stmt->execute([$vid]);
             echo json_encode(['status' => 'success', 'message' => 'Deleted']);
@@ -50,11 +63,23 @@ try {
 
     // --- 0. PRIORITY ACTIONS ---
     if ($action === 'delete_vehicle_mobile' || $action === 'remove_vehicle') {
-        $vid = $_REQUEST['vehicle_id'] ?? '';
+        $vid = $_REQUEST['vehicleId'] ?? $_REQUEST['vehicle_id'] ?? '';
         if (empty($vid)) {
             echo json_encode(['status' => 'error', 'message' => 'Missing vehicle_id.']);
             exit;
         }
+        
+        // Soft delete attempt
+        try {
+            $stmt = $db->prepare("UPDATE vehicles SET status = 'DELETED' WHERE vehicle_id = ?");
+            $stmt->execute([$vid]);
+            if ($stmt->rowCount() > 0) {
+                echo json_encode(['status' => 'success', 'message' => 'Vehicle marked as deleted.']);
+                exit;
+            }
+        } catch (Exception $e) {}
+        
+        // Hard delete fallback
         $stmt = $db->prepare("DELETE FROM vehicles WHERE vehicle_id = ?");
         $stmt->execute([$vid]);
         echo json_encode(['status' => 'success', 'message' => 'Vehicle removed successfully.']);
@@ -87,9 +112,18 @@ try {
 
     // --- 2. GARAGE ---
     if ($action === 'get_garage') {
-        $stmt = $db->prepare("SELECT vehicle_id, plate_no, make, model, year_model FROM vehicles WHERE customer_id = ? ORDER BY created_at DESC");
-        $stmt->execute([$cid]);
-        echo json_encode(['status' => 'success', 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+        // Exclude soft-deleted vehicles
+        try {
+            $stmt = $db->prepare("SELECT vehicle_id, plate_no, make, model, year_model FROM vehicles WHERE customer_id = ? AND (status IS NULL OR status NOT IN ('DELETED', 'INACTIVE', 'REMOVED', 'ARCHIVED')) ORDER BY created_at DESC");
+            $stmt->execute([$cid]);
+            $vehicles = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            echo json_encode(['status' => 'success', 'data' => $vehicles]);
+        } catch (Exception $e) {
+            // Fallback if status column doesn't exist
+            $stmt = $db->prepare("SELECT vehicle_id, plate_no, make, model, year_model FROM vehicles WHERE customer_id = ? ORDER BY created_at DESC");
+            $stmt->execute([$cid]);
+            echo json_encode(['status' => 'success', 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+        }
         exit;
     }
     if ($action === 'add_vehicle') {
