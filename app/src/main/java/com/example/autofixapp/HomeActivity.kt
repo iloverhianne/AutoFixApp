@@ -342,6 +342,7 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                 spinnerAssignment.adapter = adapter
                 spinnerAssignment.isEnabled = false
                 mechBaysList = emptyList()
+                tvMechs.text = "0"
                 return
             }
 
@@ -350,6 +351,7 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
             spinnerAssignment.adapter = loadingAdapter
             spinnerAssignment.isEnabled = false
             mechBaysList = emptyList()
+            tvMechs.text = "..."
 
             api.getAvailableMechanics(action = "get_available_mechanics", tenantId = tid, date = date, time = time).enqueue(object : Callback<MechanicsBaysResponse> {
                 override fun onResponse(call: Call<MechanicsBaysResponse>, response: Response<MechanicsBaysResponse>) {
@@ -366,6 +368,7 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                             adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
                             spinnerAssignment.adapter = adapter
                             spinnerAssignment.isEnabled = false
+                            tvMechs.text = "0"
                         } else {
                             mechBaysList = list
                             val labels = list.map { it.first.full_name ?: "Mechanic" }
@@ -373,12 +376,14 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                             adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
                             spinnerAssignment.adapter = adapter
                             spinnerAssignment.isEnabled = true
+                            tvMechs.text = list.size.toString()
                         }
                     } else {
                         val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, listOf("Error loading mechanics"))
                         adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
                         spinnerAssignment.adapter = adapter
                         spinnerAssignment.isEnabled = false
+                        tvMechs.text = "Error"
                     }
                 }
                 override fun onFailure(call: Call<MechanicsBaysResponse>, t: Throwable) {
@@ -387,6 +392,7 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                         adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
                         spinnerAssignment.adapter = adapter
                         spinnerAssignment.isEnabled = false
+                        tvMechs.text = "Error"
                         Toast.makeText(ctx, "Failed to load mechanics", Toast.LENGTH_SHORT).show()
                     }
                 }
@@ -431,6 +437,7 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                             }
                             tvSelectServices.text = if (selectedServiceNames.isEmpty()) "Choose Services..." else selectedServiceNames.joinToString(", ")
                             tvEstimate.text = String.format("\u20b1%.2f", total)
+                            updateTimeSlots()
                             updateMechanicSpinner()
                             dialog.dismiss()
                         }
@@ -450,36 +457,79 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
         // 4. Mechanic logic handled inside updateMechanicSpinner() which is triggered by date/time selection
 
         // 5. Time Slots
-        val allTimeSlots = listOf("8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM")
+        var scheduleSlotsList: List<ScheduleSlot> = emptyList()
         
         fun updateTimeSlots() {
             val date = etDate.text.toString()
-            if (date.isEmpty()) return
-            api.getBookedSlots(action = "get_booked_slots", tenantId = tid, date = date).enqueue(object : Callback<BookedSlotsResponse> {
-                override fun onResponse(call: Call<BookedSlotsResponse>, response: Response<BookedSlotsResponse>) {
+            val serviceId = selectedServiceIds.joinToString(",")
+            
+            if (date.isEmpty() || serviceId.isEmpty()) {
+                val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, listOf("Select service & date first"))
+                adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+                spinnerTime.adapter = adapter
+                spinnerTime.isEnabled = false
+                return
+            }
+            
+            val loadingAdapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, listOf("Loading schedules..."))
+            loadingAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+            spinnerTime.adapter = loadingAdapter
+            spinnerTime.isEnabled = false
+
+            api.getSchedules(action = "get_schedules", tenantId = tid, date = date, serviceId = serviceId).enqueue(object : Callback<SchedulesResponse> {
+                override fun onResponse(call: Call<SchedulesResponse>, response: Response<SchedulesResponse>) {
                     if (isAdded && response.isSuccessful) {
-                        val booked = response.body()?.booked_slots ?: emptyList()
-                        val available = allTimeSlots.filter { !booked.contains(it) }
-                        val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, available)
+                        scheduleSlotsList = response.body()?.schedules ?: emptyList()
+                        
+                        if (scheduleSlotsList.isEmpty()) {
+                            val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, listOf("No schedules available"))
+                            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+                            spinnerTime.adapter = adapter
+                            spinnerTime.isEnabled = false
+                        } else {
+                            val available = scheduleSlotsList.map { it.time_range }
+                            val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, available)
+                            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+                            spinnerTime.adapter = adapter
+                            spinnerTime.isEnabled = true
+                        }
+                    } else {
+                        val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, listOf("Error loading schedules"))
                         adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
                         spinnerTime.adapter = adapter
+                        spinnerTime.isEnabled = false
                     }
+                    updateMechanicSpinner()
                 }
-                override fun onFailure(call: Call<BookedSlotsResponse>, t: Throwable) {
-                    if (isAdded) Toast.makeText(ctx, "Slots Offline: ${t.message}", Toast.LENGTH_SHORT).show()
+                override fun onFailure(call: Call<SchedulesResponse>, t: Throwable) {
+                    if (isAdded) {
+                        Toast.makeText(ctx, "Schedules Offline: ${t.message}", Toast.LENGTH_SHORT).show()
+                        val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, listOf("Network error"))
+                        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+                        spinnerTime.adapter = adapter
+                        spinnerTime.isEnabled = false
+                        updateMechanicSpinner()
+                    }
                 }
             })
         }
 
-        val timeAdapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, allTimeSlots)
-        timeAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
-        spinnerTime.adapter = timeAdapter
+        updateTimeSlots() // Initial placeholder
 
         spinnerTime.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
+                // Update Estimated Time text with the selected schedule time range
+                val selectedTime = spinnerTime.selectedItem?.toString()
+                if (selectedTime != null && !selectedTime.contains("first") && !selectedTime.contains("...")) {
+                    tvEstimatedTime.text = selectedTime
+                } else {
+                    tvEstimatedTime.text = "--"
+                }
                 updateMechanicSpinner()
             }
-            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {
+                tvEstimatedTime.text = "--"
+            }
         }
 
         // 6. Date Picker
@@ -528,6 +578,12 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
             val estimateVal = tvEstimate.text.toString().replace("\u20b1", "").replace(",", "").trim()
             val selectedAssgn = mechBaysList.getOrNull(spinnerAssignment.selectedItemPosition)
 
+            val selectedTime = spinnerTime.selectedItem?.toString()
+            if (selectedTime == null || selectedTime.contains("first") || selectedTime.contains("available") || scheduleSlotsList.isEmpty()) {
+                Toast.makeText(ctxInner, "Please select a valid schedule.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
             if (selectedServiceIds.isEmpty() || estimateVal.isEmpty() || estimateVal == "0.00") {
                 Toast.makeText(ctxInner, "Please select at least one service.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
@@ -549,6 +605,7 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                     putExtra("vehicleId", selectedVehicleId)
                     putExtra("date", etDate.text.toString())
                     putExtra("time", spinnerTime.selectedItem?.toString() ?: "8:00 AM")
+                    putExtra("scheduleId", scheduleSlotsList.getOrNull(spinnerTime.selectedItemPosition)?.schedule_id ?: "0")
                     putExtra("estimate", estimateVal)
                     putExtra("mechanicId", mechanicId)
                     putExtra("mechanicName", mechanicName)

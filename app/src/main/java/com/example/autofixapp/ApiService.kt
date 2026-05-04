@@ -165,6 +165,14 @@ interface ApiService {
         @Query("tid") tenantId: String,
         @Query("date") date: String
     ): Call<BookedSlotsResponse>
+    
+    @GET("api-mobile.php")
+    fun getSchedules(
+        @Query("action") action: String = "get_schedules",
+        @Query("tid") tenantId: String,
+        @Query("date") date: String,
+        @Query("service_id") serviceId: String
+    ): Call<SchedulesResponse>
 }
 
 data class PaymentIntentResponse(
@@ -176,6 +184,17 @@ data class PaymentIntentResponse(
 data class BookedSlotsResponse(
     val status: String,
     val booked_slots: List<String>
+)
+
+data class ScheduleSlot(
+    val schedule_id: String,
+    val time_range: String,
+    val available_mechanics_count: Int
+)
+
+data class SchedulesResponse(
+    val status: String,
+    val schedules: List<ScheduleSlot>?
 )
 
 // Response Wrappers
