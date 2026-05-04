@@ -136,7 +136,7 @@ try {
 
     if ($action === 'get_garage' || $action === 'get_vehicles') {
         try {
-            $stmt = $db->prepare("SELECT * FROM vehicles WHERE customer_id = ? AND (status IS NULL OR status != 'REMOVED') ORDER BY created_at DESC");
+            $stmt = $db->prepare("SELECT v.*, (SELECT COUNT(*) FROM appointments a WHERE a.vehicle_id = v.vehicle_id AND a.status NOT IN ('COMPLETED', 'CANCELLED')) as active_jobs FROM vehicles v WHERE v.customer_id = ? AND (v.status IS NULL OR v.status != 'REMOVED') ORDER BY v.created_at DESC");
             $stmt->execute([$cid]);
             $vehicles = $stmt->fetchAll(PDO::FETCH_ASSOC);
             echo json_encode(['status' => 'success', 'data' => $vehicles, 'vehicles' => $vehicles]);

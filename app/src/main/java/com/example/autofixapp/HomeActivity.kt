@@ -42,40 +42,56 @@ class HomeActivity : AppCompatActivity() {
             }
             setupBottomNavListener(bottomNav)
 
-            // Handle Back Press
+            // Handle Back Press - ensure we stay in HomeActivity unless double-pressed on Home tab
             onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
-                    val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
-                    if (bottomNav != null && bottomNav.selectedItemId != R.id.nav_home) {
+                    val bottomNavView = findViewById<BottomNavigationView>(R.id.bottom_navigation)
+                    val currentItemId = bottomNavView?.selectedItemId
+
+                    android.util.Log.d("NAV_DEBUG", "Back pressed. Current tab ID: $currentItemId")
+
+                    if (bottomNavView != null && currentItemId != R.id.nav_home) {
+                        android.util.Log.d("NAV_DEBUG", "Redirecting back to Home tab")
                         // If not on Home tab, go back to Home tab first
-                        bottomNav.selectedItemId = R.id.nav_home
-                        loadFragment(HomeFragment())
+                        bottomNavView.selectedItemId = R.id.nav_home
+                        // Note: setupBottomNavListener will handle the actual loadFragment call
                     } else {
-                        // If already on Home tab, perform the double-back-to-exit logic
-                        if (backPressedTime + 2000 > System.currentTimeMillis()) {
+                        // If already on Home tab or bottomNav is missing, perform the double-back-to-exit logic
+                        val currentTime = System.currentTimeMillis()
+                        if (backPressedTime + 2000 > currentTime) {
+                            android.util.Log.d("NAV_DEBUG", "Exit threshold met, finishing HomeActivity")
                             if (::backToast.isInitialized) backToast.cancel()
                             finish()
                         } else {
+                            android.util.Log.d("NAV_DEBUG", "Exit threshold not met, showing toast")
                             backToast = Toast.makeText(baseContext, "Press back again to exit", Toast.LENGTH_SHORT)
                             backToast.show()
+                            backPressedTime = currentTime
                         }
-                        backPressedTime = System.currentTimeMillis()
                     }
                 }
             })
 
             // Initial Fragment
             val navigateTo = intent.getStringExtra("NAVIGATE_TO")
+            android.util.Log.d("NAV_DEBUG", "Starting HomeActivity with NAVIGATE_TO: $navigateTo")
+
             if (navigateTo == "track") {
+                android.util.Log.d("NAV_DEBUG", "Directing to Tracking via Garage tab")
                 bottomNav.selectedItemId = R.id.nav_garage
-                loadFragment(TrackingFragment().apply { 
-                    arguments = Bundle().apply { putString("JOB_ID", intent.getStringExtra("JOB_ID")) }
+                // Note: The listener will call loadFragment(GarageFragment())
+                // But we want TrackingFragment, so we call it AFTER the listener might have fired
+                loadFragment(TrackingFragment().apply {
+                    arguments = Bundle().apply {
+                        putString("JOB_ID", intent.getStringExtra("JOB_ID"))
+                    }
                 })
             } else if (navigateTo == "history") {
+                android.util.Log.d("NAV_DEBUG", "Directing to History tab")
                 bottomNav.selectedItemId = R.id.nav_history
-                loadFragment(HistoryFragment())
             } else {
-                loadFragment(HomeFragment())
+                android.util.Log.d("NAV_DEBUG", "Defaulting to Home tab")
+                bottomNav.selectedItemId = R.id.nav_home
             }
         } catch (e: Exception) {
             Toast.makeText(this, "Home Error: ${e.message}", Toast.LENGTH_LONG).show()
@@ -84,22 +100,59 @@ class HomeActivity : AppCompatActivity() {
 
     private fun setupBottomNavListener(bottomNav: BottomNavigationView) {
         bottomNav.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.nav_home -> loadFragment(HomeFragment())
-                R.id.nav_book -> loadFragment(BookingFragment())
-                R.id.nav_garage -> loadFragment(GarageFragment())
-                R.id.nav_history -> loadFragment(HistoryFragment())
-                R.id.nav_profile -> loadFragment(ProfileFragment())
+            val fragment = when (item.itemId) {
+                R.id.nav_home -> HomeFragment()
+                R.id.nav_book -> BookingFragment()
+                R.id.nav_garage -> GarageFragment()
+                R.id.nav_history -> HistoryFragment()
+                R.id.nav_profile -> ProfileFragment()
+                else -> null
+            }
+            
+            if (fragment != null) {
+                // If the user clicks the tab they are already on, force a refresh
+                val isSameTab = bottomNav.selectedItemId == item.itemId
+                loadFragment(fragment, forceRefresh = isSameTab)
             }
             true
         }
     }
 
-    fun loadFragment(fragment: Fragment) {
-        supportFragmentManager.beginTransaction()
-            .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out)
-            .replace(R.id.fragment_container, fragment)
-            .commit()
+    fun loadFragment(fragment: Fragment, forceRefresh: Boolean = false) {
+        val fragmentTag = fragment.javaClass.simpleName
+        android.util.Log.d("NAV_DEBUG", "loadFragment called: $fragmentTag (force=$forceRefresh)")
+
+        if (isFinishing || isDestroyed) {
+            android.util.Log.w("NAV_DEBUG", "Skipping loadFragment: Activity is finishing or destroyed")
+            return
+        }
+
+        // Check if we're already showing this fragment type to prevent flickering/state resets
+        val currentFragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
+        if (!forceRefresh && currentFragment != null && currentFragment.javaClass == fragment.javaClass) {
+            android.util.Log.d("NAV_DEBUG", "Skipping loadFragment: Same fragment already visible ($fragmentTag)")
+            return
+        }
+
+        try {
+            supportFragmentManager.beginTransaction()
+                .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out)
+                .replace(R.id.fragment_container, fragment, fragmentTag)
+                .commitAllowingStateLoss() // Safer for async/lifecycle events
+            android.util.Log.d("NAV_DEBUG", "Fragment transaction committed: $fragmentTag")
+        } catch (e: Exception) {
+            android.util.Log.e("NAV_DEBUG", "Error in loadFragment", e)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        android.util.Log.d("NAV_DEBUG", "HomeActivity onPause")
+    }
+
+    override fun onStop() {
+        super.onStop()
+        android.util.Log.d("NAV_DEBUG", "HomeActivity onStop")
     }
 }
 
@@ -695,67 +748,44 @@ class GarageFragment : Fragment(R.layout.fragment_garage) {
         val btnAdd = view.findViewById<View>(R.id.btnAddVehicle)
 
         fun refreshGarage() {
+            val tvEmpty = view.findViewById<TextView>(R.id.tvEmptyGarageMsg) ?: null
+
             api.getGarage(action = "get_garage", tenantId = tid, customerId = sm.getCustomerId() ?: "").enqueue(object : Callback<GarageResponse> {
                 override fun onResponse(call: Call<GarageResponse>, response: Response<GarageResponse>) {
                     if (isAdded && response.isSuccessful) {
                         val list = response.body()?.data ?: emptyList()
                         adapter.updateData(list)
                         emptyLayout.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
+                        tvEmpty?.text = "No vehicles in your garage yet."
+                    } else if (isAdded) {
+                        emptyLayout.visibility = View.VISIBLE
+                        tvEmpty?.text = "Error loading garage (${response.code()})"
                     }
                 }
-                override fun onFailure(call: Call<GarageResponse>, t: Throwable) {}
+                override fun onFailure(call: Call<GarageResponse>, t: Throwable) {
+                    if (isAdded) {
+                        emptyLayout.visibility = View.VISIBLE
+                        tvEmpty?.text = "Garage offline. Check connection."
+                    }
+                }
             })
         }
 
         adapter = VehicleAdapter(emptyList()) { vehicle ->
-            val vehicleId = vehicle.vehicle_id ?: return@VehicleAdapter
-            
-            AlertDialog.Builder(ctx)
-                .setTitle("Remove Vehicle")
-                .setMessage("Are you sure you want to remove ${vehicle.make} ${vehicle.model}?")
-                .setPositiveButton("Remove") { _, _ ->
-                    // Immediate UI update (Optimistic)
-                    val currentList = adapter.getVehicles().toMutableList()
-                    val removedItem = currentList.find { it.vehicle_id == vehicleId }
-                    
-                    if (removedItem != null) {
-                        currentList.remove(removedItem)
-                        adapter.updateData(currentList)
-                        emptyLayout.visibility = if (currentList.isEmpty()) View.VISIBLE else View.GONE
-                    }
-
-                    api.deleteVehicle(action = "delete_vehicle_mobile", tid = tid, vehicleId = vehicleId, customerId = sm.getCustomerId() ?: "")
-                        .enqueue(object : Callback<BaseResponse> {
-                        override fun onResponse(call: Call<BaseResponse>, response: Response<BaseResponse>) {
-                            val body = response.body()
-                            if (response.isSuccessful && body?.status == "success") {
-                                Toast.makeText(ctx, "Vehicle removed successfully", Toast.LENGTH_SHORT).show()
-                                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                                    refreshGarage()
-                                }, 500)
-                            } else {
-                                // REVERT if server actually failed or unauthorized
-                                val msg = body?.message ?: "Error ${response.code()}"
-                                if (isAdded) {
-                                    Toast.makeText(ctx, "Deletion Failed: $msg", Toast.LENGTH_LONG).show()
-                                    refreshGarage() 
-                                }
-                            }
-                        }
-                            override fun onFailure(call: Call<BaseResponse>, t: Throwable) {
-                                if (isAdded) {
-                                    Toast.makeText(ctx, "Error: ${t.localizedMessage}", Toast.LENGTH_LONG).show()
-                                    refreshGarage() // Revert UI
-                                }
-                            }
-                        })
-                }
-                .setNegativeButton("Cancel", null)
-                .show()
+            // If vehicle has active jobs, navigate to tracking
+            val jobId = vehicle.vehicle_id ?: ""
+            if (vehicle.active_jobs != null && vehicle.active_jobs > 0) {
+                (activity as? HomeActivity)?.loadFragment(TrackingFragment().apply {
+                    arguments = Bundle().apply { putString("JOB_ID", jobId) }
+                })
+            } else {
+                // Otherwise show standard removal dialog
+                showRemovalDialog(ctx, vehicle) { refreshGarage() }
+            }
         }
+
         rv.layoutManager = LinearLayoutManager(ctx)
         rv.adapter = adapter
-
 
         btnAdd.setOnClickListener {
             val dialogView = LayoutInflater.from(ctx).inflate(R.layout.dialog_add_vehicle, null)
@@ -811,6 +841,30 @@ class GarageFragment : Fragment(R.layout.fragment_garage) {
 
         refreshGarage()
     }
+
+    private fun showRemovalDialog(ctx: android.content.Context, vehicle: Vehicle, onRemoved: () -> Unit) {
+        val vehicleId = vehicle.vehicle_id ?: return
+        AlertDialog.Builder(ctx)
+            .setTitle("Remove Vehicle")
+            .setMessage("Are you sure you want to remove ${vehicle.make} ${vehicle.model}?")
+            .setPositiveButton("Remove") { _, _ ->
+                val sm = SessionManager(ctx)
+                val api = RetrofitClient.getApiService(ctx)
+                val tid = sm.getTenantId() ?: "1"
+                api.deleteVehicle(action = "delete_vehicle_mobile", tid = tid, vehicleId = vehicleId, customerId = sm.getCustomerId() ?: "")
+                    .enqueue(object : Callback<BaseResponse> {
+                        override fun onResponse(call: Call<BaseResponse>, response: Response<BaseResponse>) {
+                            if (response.isSuccessful && response.body()?.status == "success") {
+                                Toast.makeText(ctx, "Vehicle removed", Toast.LENGTH_SHORT).show()
+                                onRemoved()
+                            }
+                        }
+                        override fun onFailure(call: Call<BaseResponse>, t: Throwable) {}
+                    })
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
 }
 
 // --- 4. HISTORY FRAGMENT ---
@@ -830,7 +884,12 @@ class HistoryFragment : Fragment(R.layout.fragment_history) {
         val rgTabs = view.findViewById<android.widget.RadioGroup>(R.id.rgTabs)
 
         apptAdapter = AppointmentAdapter(emptyList())
-        repairAdapter = HistoryAdapter(emptyList())
+        repairAdapter = HistoryAdapter(emptyList()) { jobId ->
+            // On Item Click: Navigate to TrackingFragment
+            (activity as? HomeActivity)?.loadFragment(TrackingFragment().apply {
+                arguments = Bundle().apply { putString("JOB_ID", jobId) }
+            })
+        }
         payAdapter = PaymentHistoryAdapter(emptyList())
 
         rvAppt.layoutManager = LinearLayoutManager(ctx)
@@ -847,6 +906,8 @@ class HistoryFragment : Fragment(R.layout.fragment_history) {
             rvPay.visibility = if (checkedId == R.id.rbPayments) View.VISIBLE else View.GONE
         }
 
+        val tvStatus = view.findViewById<android.widget.TextView>(R.id.tvHistoryStatus)
+
         api.getHistory(action = "get_history", tenantId = sm.getTenantId() ?: "1", customerId = sm.getCustomerId() ?: "").enqueue(object : Callback<HistoryResponse> {
             override fun onResponse(call: Call<HistoryResponse>, response: Response<HistoryResponse>) {
                 if (!isAdded) return
@@ -856,30 +917,56 @@ class HistoryFragment : Fragment(R.layout.fragment_history) {
                         if (body?.status == "success") {
                             val repairList = body.repairs ?: body.bookings ?: body.services ?: emptyList()
                             
-                            apptAdapter.updateData(repairList.filter { 
+                            // 1. Filter for Bookings/Active tab (Exclude completed/cancelled)
+                            val activeList = repairList.filter { 
                                 val s = it.status?.lowercase() ?: ""
                                 s != "completed" && s != "cancelled" 
-                            })
-                            repairAdapter.updateData(repairList)
+                            }
+                            apptAdapter.updateData(activeList)
+                            
+                            // 2. Filter for Repairs/History tab (Show everything but maybe prioritize completed)
+                            // Or show ONLY completed/cancelled if that's preferred.
+                            // Let's show everything in history but filter strictly for clarity if user prefers.
+                            // The user said "fix history", so let's make it show completed/cancelled here.
+                            val historyList = repairList.filter {
+                                val s = it.status?.lowercase() ?: ""
+                                s == "completed" || s == "cancelled"
+                            }
+                            repairAdapter.updateData(historyList)
                             
                             val paymentList = body.payments ?: emptyList()
                             payAdapter.updateData(paymentList)
+
+                            if (repairList.isEmpty() && paymentList.isEmpty()) {
+                                tvStatus.visibility = View.VISIBLE
+                                tvStatus.text = "No history records found."
+                            } else {
+                                tvStatus.visibility = View.GONE
+                            }
                         } else {
                             // Server returned status: error
                             val msg = body?.message ?: "Server reported an error fetching history"
+                            tvStatus.visibility = View.VISIBLE
+                            tvStatus.text = "Status: $msg"
                             Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show()
                         }
                     } else {
-                        // HTTP Error (e.g. 400, 500)
-                        Toast.makeText(ctx, "Server Error: ${response.code()}", Toast.LENGTH_SHORT).show()
+                        // HTTP Error
+                        tvStatus.visibility = View.VISIBLE
+                        tvStatus.text = "Server Error: ${response.code()}"
                     }
                 } catch (e: Exception) {
-                    android.util.Log.e("HISTORY_CRASH", "Error processing history", e)
-                    // If it still crashes here, we catch it so the app doesn't exit
+                    android.util.Log.e("HISTORY_DEBUG", "Error processing history", e)
+                    tvStatus.visibility = View.VISIBLE
+                    tvStatus.text = "Error loading data."
                 }
             }
             override fun onFailure(call: Call<HistoryResponse>, t: Throwable) {
-                if (isAdded) Toast.makeText(ctx, "Network Error: Check Connection", Toast.LENGTH_SHORT).show()
+                if (isAdded) {
+                    tvStatus.visibility = View.VISIBLE
+                    tvStatus.text = "Offline: Check connection"
+                    Toast.makeText(ctx, "Network Error", Toast.LENGTH_SHORT).show()
+                }
             }
         })
     }
