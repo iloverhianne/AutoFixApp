@@ -55,7 +55,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'get_schedules') {
         
         // C. Count available mechanics for this specific slot range
         // Count total mechanics
-        $totalMechsQuery = "SELECT COUNT(*) as total FROM users WHERE tenant_id = ? AND role = 'Mechanic' AND status = 'Active'";
+        $totalMechsQuery = "SELECT COUNT(*) as total FROM users WHERE tenant_id = ? AND role = 'Mechanic'";
         $stmt2 = $conn->prepare($totalMechsQuery);
         $stmt2->bind_param("i", $tenantId);
         $stmt2->execute();
@@ -72,7 +72,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'get_schedules') {
             AND appointment_date = ? 
             AND status IN ('PENDING', 'CONFIRMED', 'ONGOING', 'APPROVED')
             AND (
-                (TIME(appointment_time) <= ? AND TIME(COALESCE(estimated_end_time, ADDTIME(appointment_time, '01:00:00'))) > ?)
+                (TIME(appointment_time) <= ? AND TIME(ADDTIME(appointment_time, '01:00:00')) > ?)
                 OR
                 (TIME(appointment_time) >= ? AND TIME(appointment_time) < ?)
             )
@@ -128,7 +128,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'get_available_mechanics') {
         AND appointment_date = ? 
         AND status IN ('PENDING', 'CONFIRMED', 'ONGOING', 'APPROVED')
         AND (
-            (TIME(appointment_time) <= ? AND TIME(COALESCE(estimated_end_time, ADDTIME(appointment_time, '01:00:00'))) > ?)
+            (TIME(appointment_time) <= ? AND TIME(ADDTIME(appointment_time, '01:00:00')) > ?)
             OR
             (TIME(appointment_time) >= ? AND TIME(appointment_time) < ?)
         )
@@ -149,7 +149,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'get_available_mechanics') {
     $mechanicsQuery = "
         SELECT user_id AS mechanic_id, CONCAT(first_name, ' ', last_name) AS full_name, role AS specialization 
         FROM users 
-        WHERE tenant_id = ? AND role = 'Mechanic' AND status = 'Active'
+        WHERE tenant_id = ? AND role = 'Mechanic'
     ";
     
     if (count($unavailableMechanics) > 0) {

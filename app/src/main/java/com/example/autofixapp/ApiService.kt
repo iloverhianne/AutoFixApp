@@ -194,6 +194,7 @@ data class ScheduleSlot(
 
 data class SchedulesResponse(
     val status: String,
+    val message: String? = null,
     val schedules: List<ScheduleSlot>?
 )
 
