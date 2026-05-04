@@ -46,7 +46,26 @@ class MainActivity : AppCompatActivity() {
                 return
             }
             
-            // 2. Session Check
+            // 2. Solve Security Challenge (InfinityFree/AES)
+            val challengeWebView = WebView(this)
+            challengeWebView.visibility = android.view.View.GONE
+            challengeWebView.settings.javaScriptEnabled = true
+            challengeWebView.settings.domStorageEnabled = true
+            challengeWebView.settings.userAgentString = RetrofitClient.USER_AGENT
+            challengeWebView.webViewClient = object : WebViewClient() {
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    android.util.Log.d("AutoFixChallenge", "Challenge Bypass Finished: $url")
+                }
+                override fun onReceivedError(view: WebView?, request: android.webkit.WebResourceRequest?, error: android.webkit.WebResourceError?) {
+                    android.util.Log.e("AutoFixChallenge", "Bypass Error: ${error?.description}")
+                }
+            }
+            challengeWebView.loadUrl("http://multi-tenant.ct.ws/api-mobile.php")
+            
+            // Attach to root so it actually runs
+            findViewById<android.view.ViewGroup>(android.R.id.content).addView(challengeWebView)
+
+            // 3. Session Check
             if (sessionManager.isLoggedIn()) {
                 android.widget.Toast.makeText(this, "Logging you in...", android.widget.Toast.LENGTH_SHORT).show()
                 val intent = android.content.Intent(this, HomeActivity::class.java)
@@ -122,7 +141,13 @@ class MainActivity : AppCompatActivity() {
                     handler.removeCallbacks(timeoutRunnable)
                     btnLogin.isEnabled = true
                     btnLogin.text = "LOGIN TO MY ACCOUNT"
-                    Toast.makeText(this@MainActivity, "Connection Failed: ${t.message}", Toast.LENGTH_LONG).show()
+                    
+                    val errorMessage = if (t is com.google.gson.JsonSyntaxException || t is java.lang.IllegalStateException) {
+                        "Connection Failed: Server returned invalid response (possibly Security Challenge). Please wait a moment and try again."
+                    } else {
+                        "Connection Failed: ${t.message}"
+                    }
+                    Toast.makeText(this@MainActivity, errorMessage, Toast.LENGTH_LONG).show()
                 }
             })
         }

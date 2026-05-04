@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import androidx.core.content.ContextCompat
 
 class PaymentHistoryAdapter(private var payments: List<PaymentHistory>) :
     RecyclerView.Adapter<PaymentHistoryAdapter.ViewHolder>() {
@@ -25,56 +26,65 @@ class PaymentHistoryAdapter(private var payments: List<PaymentHistory>) :
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val payment = payments[position]
-        holder.tvMethod.text = payment.payment_method?.uppercase() ?: "UNKNOWN"
-        holder.tvStatus.text = payment.status?.uppercase() ?: "UNKNOWN"
-        val rawDate = payment.date ?: "--"
-        val displayDate = if (rawDate.contains(" ")) {
-            try {
-                val parts = rawDate.split(" ")
-                val datePart = parts[0]
-                val timePart = parts[1]
-                val tParts = timePart.split(":")
-                if (tParts.size >= 2) {
-                    var h = tParts[0].toInt()
-                    val m = tParts[1]
-                    val ampm = if (h >= 12) "PM" else "AM"
-                    val h12 = when {
-                        h == 0 -> 12
-                        h > 12 -> h - 12
-                        else -> h
-                    }
-                    "$datePart · ${String.format("%02d:%s %s", h12, m, ampm)}"
-                } else rawDate
-            } catch (e: Exception) { rawDate }
-        } else rawDate
+        try {
+            val payment = payments[position]
+            
+            // Better defaults for cleaner look
+            val method = payment.payment_method ?: payment.method ?: "Online Payment"
+            val type = payment.payment_type ?: payment.type ?: "Service Payment"
+            
+            holder.tvMethod.text = method.uppercase()
+            holder.tvStatus.text = (payment.status ?: "SUCCESS").uppercase()
+            
+            val rawDate = payment.date ?: payment.created_at ?: "--"
+            val displayDate = if (rawDate.contains(" ")) {
+                try {
+                    val parts = rawDate.split(" ")
+                    val datePart = parts[0]
+                    val timePart = parts[1]
+                    val tParts = timePart.split(":")
+                    if (tParts.size >= 2) {
+                        var h = tParts[0].toInt()
+                        val m = tParts[1]
+                        val ampm = if (h >= 12) "PM" else "AM"
+                        val h12 = when {
+                            h == 0 -> 12
+                            h > 12 -> h - 12
+                            else -> h
+                        }
+                        "$datePart · ${String.format("%02d:%s %s", h12, m, ampm)}"
+                    } else rawDate
+                } catch (e: Exception) { rawDate }
+            } else rawDate
 
-        holder.tvDate.text = displayDate
-        holder.tvType.text = "Type: ${payment.payment_type?.uppercase() ?: "UNKNOWN"}"
-        holder.tvAmount.text = "₱${payment.amount ?: "0.00"}"
+            holder.tvDate.text = displayDate
+            holder.tvType.text = type.replace("_", " ").uppercase()
+            holder.tvAmount.text = "₱${payment.amount ?: "0.00"}"
 
-        if (!payment.plate_no.isNullOrEmpty() || !payment.service_name.isNullOrEmpty()) {
-            holder.tvDetails.visibility = View.VISIBLE
-            holder.tvDetails.text = "${payment.plate_no ?: ""} • ${payment.service_name ?: ""}"
-        } else {
-            holder.tvDetails.visibility = View.GONE
-        }
+            if (!payment.plate_no.isNullOrEmpty() || !payment.service_name.isNullOrEmpty()) {
+                holder.tvDetails.visibility = View.VISIBLE
+                holder.tvDetails.text = "${payment.plate_no ?: ""} • ${payment.service_name ?: "AutoFix Service"}"
+            } else {
+                holder.tvDetails.visibility = View.GONE
+            }
 
-        // Dynamic status colors
-        val context = holder.itemView.context
-        when (payment.status?.lowercase() ?: "") {
-            "paid", "completed", "success" -> {
-                holder.tvStatus.setTextColor(context.getColor(R.color.status_completed_text))
-                holder.tvStatus.setBackgroundResource(R.drawable.status_success_badge)
+            // Dynamic status colors
+            val context = holder.itemView.context
+            val colorRes = when (payment.status?.lowercase() ?: "") {
+                "paid", "completed", "success" -> R.color.status_completed_text
+                "failed", "cancelled" -> R.color.status_cancelled_text
+                else -> R.color.status_active_text
             }
-            "failed", "cancelled" -> {
-                holder.tvStatus.setTextColor(context.getColor(R.color.status_cancelled_text))
-                holder.tvStatus.setBackgroundResource(R.drawable.status_danger_badge)
+            val bgRes = when (payment.status?.lowercase() ?: "") {
+                "paid", "completed", "success" -> R.drawable.status_success_badge
+                "failed", "cancelled" -> R.drawable.status_danger_badge
+                else -> R.drawable.status_active_badge
             }
-            else -> {
-                holder.tvStatus.setTextColor(context.getColor(R.color.status_active_text))
-                holder.tvStatus.setBackgroundResource(R.drawable.status_active_badge)
-            }
+            
+            holder.tvStatus.setTextColor(ContextCompat.getColor(context, colorRes))
+            holder.tvStatus.setBackgroundResource(bgRes)
+        } catch (e: Exception) {
+            android.util.Log.e("PAY_ADAPTER_ERROR", "Error binding payment item", e)
         }
     }
 

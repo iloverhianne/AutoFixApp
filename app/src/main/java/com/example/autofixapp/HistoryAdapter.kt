@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
+import androidx.core.content.ContextCompat
 
 class HistoryAdapter(private var repairs: List<RepairHistory>, private val onItemClick: ((String) -> Unit)? = null) :
     RecyclerView.Adapter<HistoryAdapter.ViewHolder>() {
@@ -32,93 +33,96 @@ class HistoryAdapter(private var repairs: List<RepairHistory>, private val onIte
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val repair = repairs[position]
-        holder.tvName.text = "${repair.service_name ?: "Repair"} #${repair.job_id ?: "0"} (${repair.plate_no ?: "N/A"})"
-        holder.tvStatus.text = repair.status?.uppercase() ?: "UNKNOWN"
-        val rawTime = repair.time
-        val formattedTime = if (!rawTime.isNullOrEmpty()) {
-            try {
-                if (rawTime.contains("AM", ignoreCase = true) || rawTime.contains("PM", ignoreCase = true)) {
-                    rawTime
-                } else {
-                    val tParts = rawTime.split(":")
-                    if (tParts.size >= 2) {
-                        var h = tParts[0].toInt()
-                        val m = tParts[1]
-                        val ampm = if (h >= 12) "PM" else "AM"
-                        val h12 = when {
-                            h == 0 -> 12
-                            h > 12 -> h - 12
-                            else -> h
-                        }
-                        String.format("%02d:%s %s", h12, m, ampm)
-                    } else rawTime
-                }
-            } catch (e: Exception) { rawTime }
-        } else null
+        try {
+            val repair = repairs[position]
+            holder.tvName.text = "${repair.service_name ?: "Repair"} #${repair.job_id ?: "0"} (${repair.plate_no ?: "N/A"})"
+            holder.tvStatus.text = repair.status?.uppercase() ?: "UNKNOWN"
+            val rawTime = repair.time
+            val formattedTime = if (!rawTime.isNullOrEmpty()) {
+                try {
+                    if (rawTime.contains("AM", ignoreCase = true) || rawTime.contains("PM", ignoreCase = true)) {
+                        rawTime
+                    } else {
+                        val tParts = rawTime.split(":")
+                        if (tParts.size >= 2) {
+                            var h = tParts[0].toInt()
+                            val m = tParts[1]
+                            val ampm = if (h >= 12) "PM" else "AM"
+                            val h12 = when {
+                                h == 0 -> 12
+                                h > 12 -> h - 12
+                                else -> h
+                            }
+                            String.format("%02d:%s %s", h12, m, ampm)
+                        } else rawTime
+                    }
+                } catch (e: Exception) { rawTime }
+            } else null
 
-        holder.tvDate.text = if (!formattedTime.isNullOrEmpty()) {
-            "${repair.date ?: "--"} · $formattedTime"
-        } else {
-            repair.date ?: "--"
-        }
-        holder.tvAmount.text = "₱${repair.total_amount ?: "0.00"}"
-        
-        // Billing Logic
-        val total = repair.total_amount?.toDoubleOrNull() ?: 0.0
-        val paid = repair.paid_amount?.toDoubleOrNull() ?: 0.0
-        val balance = total - paid
-        
-        if (paid > 0) {
-            holder.layoutDownpayment.visibility = View.VISIBLE
-            holder.tvPaid.text = "₱${String.format("%.2f", paid)}"
-            
-            if (balance > 0) {
-                holder.layoutBalance.visibility = View.VISIBLE
-                holder.tvBalance.text = "₱${String.format("%.2f", balance)}"
+            holder.tvDate.text = if (!formattedTime.isNullOrEmpty()) {
+                "${repair.date ?: "--"} · $formattedTime"
             } else {
+                repair.date ?: "--"
+            }
+            holder.tvAmount.text = "₱${repair.total_amount ?: "0.00"}"
+            
+            // Billing Logic
+            val total = repair.total_amount?.toDoubleOrNull() ?: 0.0
+            val paid = repair.paid_amount?.toDoubleOrNull() ?: 0.0
+            val balance = total - paid
+            
+            if (paid > 0) {
+                holder.layoutDownpayment.visibility = View.VISIBLE
+                holder.tvPaid.text = "₱${String.format("%.2f", paid)}"
+                
+                if (balance > 0) {
+                    holder.layoutBalance.visibility = View.VISIBLE
+                    holder.tvBalance.text = "₱${String.format("%.2f", balance)}"
+                } else {
+                    holder.layoutBalance.visibility = View.GONE
+                }
+            } else {
+                holder.layoutDownpayment.visibility = View.GONE
                 holder.layoutBalance.visibility = View.GONE
             }
-        } else {
-            holder.layoutDownpayment.visibility = View.GONE
-            holder.layoutBalance.visibility = View.GONE
-        }
 
-        // Show Pay Button if Status is COMPLETED (Ready for final payment)
-        if (repair.status?.equals("COMPLETED", ignoreCase = true) == true && balance > 0.01) {
-            holder.btnPay.visibility = View.VISIBLE
-            holder.btnPay.text = "Pay Remaining Balance"
-            holder.btnPay.setOnClickListener {
-                val context = holder.itemView.context
-                val intent = Intent(context, PaymentActivity::class.java).apply {
-                    putExtra("AMOUNT", String.format("%.2f", balance))
-                    putExtra("JOB_ID", repair.job_id)
+            // Show Pay Button if Status is COMPLETED (Ready for final payment)
+            if (repair.status?.equals("COMPLETED", ignoreCase = true) == true && balance > 0.01) {
+                holder.btnPay.visibility = View.VISIBLE
+                holder.btnPay.text = "Pay Remaining Balance"
+                holder.btnPay.setOnClickListener {
+                    val context = holder.itemView.context
+                    val intent = Intent(context, PaymentActivity::class.java).apply {
+                        putExtra("AMOUNT", String.format("%.2f", balance))
+                        putExtra("JOB_ID", repair.job_id)
+                    }
+                    context.startActivity(intent)
                 }
-                context.startActivity(intent)
+            } else {
+                holder.btnPay.visibility = View.GONE
             }
-        } else {
-            holder.btnPay.visibility = View.GONE
-        }
-        
-        // Dynamic status colors
-        val context = holder.itemView.context
-        when (repair.status?.lowercase()) {
-            "completed" -> {
-                holder.tvStatus.setTextColor(context.getColor(R.color.status_completed_text))
-                holder.tvStatus.setBackgroundResource(R.drawable.status_success_badge)
+            
+            // Dynamic status colors
+            val context = holder.itemView.context
+            val colorRes = when (repair.status?.lowercase()) {
+                "completed" -> R.color.status_completed_text
+                "cancelled" -> R.color.status_cancelled_text
+                else -> R.color.status_active_text
             }
-            "cancelled" -> {
-                holder.tvStatus.setTextColor(context.getColor(R.color.status_cancelled_text))
-                holder.tvStatus.setBackgroundResource(R.drawable.status_danger_badge)
+            val bgRes = when (repair.status?.lowercase()) {
+                "completed" -> R.drawable.status_success_badge
+                "cancelled" -> R.drawable.status_danger_badge
+                else -> R.drawable.status_active_badge
             }
-            else -> {
-                holder.tvStatus.setTextColor(context.getColor(R.color.status_active_text))
-                holder.tvStatus.setBackgroundResource(R.drawable.status_active_badge)
+            
+            holder.tvStatus.setTextColor(ContextCompat.getColor(context, colorRes))
+            holder.tvStatus.setBackgroundResource(bgRes)
+            
+            holder.itemView.setOnClickListener {
+                onItemClick?.invoke(repair.job_id ?: "")
             }
-        }
-        
-        holder.itemView.setOnClickListener {
-            onItemClick?.invoke(repair.job_id ?: "")
+        } catch (e: Exception) {
+            android.util.Log.e("HISTORY_ADAPTER_ERROR", "Error binding item", e)
         }
     }
 

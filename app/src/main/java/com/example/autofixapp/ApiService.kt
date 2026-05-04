@@ -14,6 +14,13 @@ interface ApiService {
 
     // 2.5.2 Service Appointment Booking
     @GET("api-mobile.php")
+    fun getGarage(
+        @Query("action") action: String = "get_garage",
+        @Query("customer_id") customerId: String,
+        @Query("tid") tenantId: String
+    ): Call<GarageResponse>
+
+    @GET("api-mobile.php")
     fun getServices(
         @Query("action") action: String = "get_services",
         @Query("tid") tenantId: String
@@ -73,12 +80,6 @@ interface ApiService {
     ): Call<HistoryResponse>
 
     // 2.5.6 Garage / Vehicle Management
-    @GET("api-mobile.php")
-    fun getGarage(
-        @Query("action") action: String = "get_garage",
-        @Query("tid") tenantId: String,
-        @Query("customer_id") customerId: String
-    ): Call<GarageResponse>
 
     @FormUrlEncoded
     @POST("api-mobile.php")
@@ -95,7 +96,8 @@ interface ApiService {
     @FormUrlEncoded
     @POST("api-mobile.php")
     fun deleteVehicle(
-        @Field("action") action: String = "delete_vehicle_mobile",
+        @Query("action") action: String = "delete_vehicle_mobile",
+        @Field("tid") tid: String,
         @Field("vehicle_id") vehicleId: String,
         @Field("customer_id") customerId: String
     ): Call<BaseResponse>
@@ -230,10 +232,10 @@ data class ChatResponse(
 data class HistoryResponse(
     val status: String,
     val message: String? = null,
-    val repairs: List<RepairHistory>, // For backward compatibility
+    val repairs: List<RepairHistory>? = null, 
     val bookings: List<RepairHistory>? = null,
     val services: List<RepairHistory>? = null,
-    val payments: List<PaymentHistory>
+    val payments: List<PaymentHistory>? = null
 )
 
 data class TrackingResponse(
@@ -301,7 +303,10 @@ data class PaymentHistory(
     val amount: String?,
     val payment_method: String?,
     val payment_type: String?,
+    val method: String? = null, // Backward compatibility
+    val type: String? = null,    // Backward compatibility
     val status: String?,
+    @com.google.gson.annotations.SerializedName("date", alternate = ["created_at"])
     val date: String?,
     val time: String? = null,
     val created_at: String? = null,
@@ -316,6 +321,14 @@ data class JobInfo(
     val plate_no: String?,
     val make: String?,
     val model: String?
+)
+
+data class BookingInitResponse(
+    val status: String?,
+    val vehicles: List<Vehicle>?,
+    val services: List<Service>?,
+    val mechanics: List<Mechanic>?,
+    val bays: List<Bay>?
 )
 
 data class AvailabilityResponse(

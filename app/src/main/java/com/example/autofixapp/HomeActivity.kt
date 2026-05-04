@@ -45,14 +45,22 @@ class HomeActivity : AppCompatActivity() {
             // Handle Back Press
             onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
-                    if (backPressedTime + 2000 > System.currentTimeMillis()) {
-                        if (::backToast.isInitialized) backToast.cancel()
-                        finish()
+                    val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
+                    if (bottomNav != null && bottomNav.selectedItemId != R.id.nav_home) {
+                        // If not on Home tab, go back to Home tab first
+                        bottomNav.selectedItemId = R.id.nav_home
+                        loadFragment(HomeFragment())
                     } else {
-                        backToast = Toast.makeText(baseContext, "Press back again to exit", Toast.LENGTH_SHORT)
-                        backToast.show()
+                        // If already on Home tab, perform the double-back-to-exit logic
+                        if (backPressedTime + 2000 > System.currentTimeMillis()) {
+                            if (::backToast.isInitialized) backToast.cancel()
+                            finish()
+                        } else {
+                            backToast = Toast.makeText(baseContext, "Press back again to exit", Toast.LENGTH_SHORT)
+                            backToast.show()
+                        }
+                        backPressedTime = System.currentTimeMillis()
                     }
-                    backPressedTime = System.currentTimeMillis()
                 }
             })
 
@@ -193,7 +201,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     if (response.isSuccessful) {
                         val wait = response.body()?.waiting_time
                         tvWaitTime.text = if (wait.isNullOrBlank()) "Ready Now" else wait
-                        tvWaitTime.setTextColor(resources.getColor(R.color.warning_orange, null))
+                        tvWaitTime.setTextColor(androidx.core.content.ContextCompat.getColor(ctx, R.color.warning_orange))
                     } else {
                         tvWaitTime.text = "Unavailable"
                     }
@@ -202,7 +210,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             override fun onFailure(call: Call<AvailabilityResponse>, t: Throwable) {
                 if (isAdded) {
                     tvWaitTime.text = "Offline (${t.message?.take(15)})"
-                    tvWaitTime.setTextColor(resources.getColor(R.color.error_red, null))
+                    tvWaitTime.setTextColor(androidx.core.content.ContextCompat.getColor(ctx, R.color.error_red))
                     android.util.Log.e("AutoFixAPI", "Availability Failure", t)
                 }
             }
@@ -215,44 +223,39 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         api.getServices(action = "get_services", tenantId = tid).enqueue(object : Callback<ServiceResponse> {
             override fun onResponse(call: Call<ServiceResponse>, response: Response<ServiceResponse>) {
                 if (isAdded) {
-                    if (response.isSuccessful) {
-                        val services = response.body()?.data ?: emptyList()
-                        if (services.isNotEmpty()) {
-                            grid.visibility = View.VISIBLE
-                            tvNoServices.visibility = View.GONE
-                            grid.removeAllViews()
-                            
-                            // Show all services (not just 4)
-                            services.forEach { service ->
-                                val card: View = LayoutInflater.from(ctx).inflate(R.layout.item_service_home, grid, false)
-                                val tvName = card.findViewById<TextView>(R.id.tvServiceNameHome)
-                                val tvPrice = card.findViewById<TextView>(R.id.tvServicePriceHome)
-                                
-                                tvName.text = service.service_name
-                                tvPrice.text = "Start at \u20b1${service.price}"
-                                
-                                val params = android.widget.GridLayout.LayoutParams()
-                                params.width = android.widget.GridLayout.LayoutParams.MATCH_PARENT
-                                params.height = android.widget.GridLayout.LayoutParams.WRAP_CONTENT
-                                params.setMargins(0, 0, 0, 16)
-                                card.layoutParams = params
-                                
-                                grid.addView(card)
-                            }
-                        } else {
-                            tvNoServices.text = "No services found in database"
-                            tvNoServices.visibility = View.VISIBLE
-                        }
-                    } else {
-                        tvNoServices.text = "Error connecting to service catalog"
-                        tvNoServices.visibility = View.VISIBLE
-                    }
+                    val services = if (response.isSuccessful) response.body()?.data ?: emptyList() else emptyList()
+                    displayServices(services)
                 }
             }
             override fun onFailure(call: Call<ServiceResponse>, t: Throwable) {
                 if (isAdded) {
-                    tvNoServices.text = "Connection Error: Check internet"
+                    // Show fallback parts if server is offline
+                    val fallback = listOf(
+                        Service("1", "Change Oil", "1500", "Engine oil change"),
+                        Service("2", "Brake Pads", "2500", "New brake pads"),
+                        Service("3", "Battery", "4500", "New battery"),
+                        Service("4", "Oil Filter", "450", "Filter replacement")
+                    )
+                    displayServices(fallback)
+                }
+            }
+
+            private fun displayServices(services: List<Service>) {
+                if (!isAdded) return
+                if (services.isNotEmpty()) {
+                    grid.visibility = View.VISIBLE
+                    tvNoServices.visibility = View.GONE
+                    grid.removeAllViews()
+                    services.forEach { service ->
+                        val card: View = LayoutInflater.from(ctx).inflate(R.layout.item_service_home, grid, false)
+                        card.findViewById<TextView>(R.id.tvServiceNameHome).text = service.service_name
+                        card.findViewById<TextView>(R.id.tvServicePriceHome).text = "Start at \u20b1${service.price}"
+                        grid.addView(card)
+                    }
+                } else {
+                    grid.visibility = View.GONE
                     tvNoServices.visibility = View.VISIBLE
+                    tvNoServices.text = "No items available today."
                 }
             }
         })
@@ -312,33 +315,41 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                 }
             }
             override fun onFailure(call: Call<AvailabilityResponse>, t: Throwable) {
-                if (isAdded) Toast.makeText(ctx, "Availability Offline: ${t.message}", Toast.LENGTH_LONG).show()
+                if (isAdded) {
+                    tvSlots.text = "0"
+                    tvMechs.text = "0"
+                    tvWait.text = "Offline"
+                }
             }
         })
 
         // 2. Fetch Garage
-        api.getGarage(action = "get_garage", tenantId = tid, customerId = sm.getCustomerId() ?: "").enqueue(object : Callback<GarageResponse> {
-            override fun onResponse(call: Call<GarageResponse>, response: Response<GarageResponse>) {
-                if (isAdded && response.isSuccessful) {
-                    vehicleList = response.body()?.data ?: emptyList()
-                    if (vehicleList.isEmpty()) {
-                        val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, listOf("No vehicles found. Please add a vehicle first."))
-                        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
-                        spinnerVehicle.adapter = adapter
-                        spinnerVehicle.isEnabled = false
-                    } else {
-                        val labels = vehicleList.map { "${it.make} ${it.model} (${it.plate_no})" }
-                        val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, labels)
-                        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
-                        spinnerVehicle.adapter = adapter
-                        spinnerVehicle.isEnabled = true
+        fun fetchGarage() {
+            api.getGarage(action = "get_garage", tenantId = tid, customerId = sm.getCustomerId() ?: "").enqueue(object : Callback<GarageResponse> {
+                override fun onResponse(call: Call<GarageResponse>, response: Response<GarageResponse>) {
+                    if (isAdded && response.isSuccessful) {
+                        vehicleList = response.body()?.data ?: emptyList()
+                        if (vehicleList.isEmpty()) {
+                            val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, listOf("No vehicles found. Please add a vehicle first."))
+                            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+                            spinnerVehicle.adapter = adapter
+                            spinnerVehicle.isEnabled = false
+                        } else {
+                            val labels = vehicleList.map { "${it.make} ${it.model} (${it.plate_no})" }
+                            val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, labels)
+                            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+                            spinnerVehicle.adapter = adapter
+                            spinnerVehicle.isEnabled = true
+                        }
                     }
                 }
-            }
-            override fun onFailure(call: Call<GarageResponse>, t: Throwable) {
-                if (isAdded) Toast.makeText(ctx, "Garage Fetch Error", Toast.LENGTH_SHORT).show()
-            }
-        })
+                override fun onFailure(call: Call<GarageResponse>, t: Throwable) {
+                    // Silent fail
+                }
+            })
+        }
+        
+        fetchGarage()
 
         // 3. Fetch Services
         val selectedServiceIds = mutableListOf<String>()
@@ -472,15 +483,14 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                         spinnerTime.adapter = adapter
                         spinnerTime.isEnabled = false
                         
-                        // Show detailed error in toast for debugging
-                        Toast.makeText(ctx, "Debug: $msg", Toast.LENGTH_LONG).show()
+                        // Log error instead of Toast
+                        android.util.Log.e("AutoFixAPI", "Schedule Error: $msg")
                     }
                     updateMechanicSpinner()
                 }
                 override fun onFailure(call: Call<SchedulesResponse>, t: Throwable) {
                     if (isAdded) {
-                        Toast.makeText(ctx, "Schedules Offline: ${t.message}", Toast.LENGTH_SHORT).show()
-                        val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, listOf("Network error"))
+                        val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, listOf("Offline (Check Connection)"))
                         adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
                         spinnerTime.adapter = adapter
                         spinnerTime.isEnabled = false
@@ -493,56 +503,67 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
         // Initialize with default state
         updateMechanicSpinner()
 
+        // Always enable the click listener
+        tvSelectServices.setOnClickListener {
+            if (servicesList.isEmpty()) {
+                Toast.makeText(ctx, "Loading services... please wait or check connection", Toast.LENGTH_SHORT).show()
+                // Re-fetch services if list is empty
+                api.getServices(action = "get_services", tenantId = tid).enqueue(object : Callback<ServiceResponse> {
+                    override fun onResponse(call: Call<ServiceResponse>, response: Response<ServiceResponse>) {
+                        if (isAdded && response.isSuccessful) {
+                            servicesList = response.body()?.data ?: emptyList()
+                            if (servicesList.isNotEmpty()) tvSelectServices.performClick()
+                        }
+                    }
+                    override fun onFailure(call: Call<ServiceResponse>, t: Throwable) {}
+                })
+                return@setOnClickListener
+            }
+            
+            val dialogView = LayoutInflater.from(ctx).inflate(R.layout.dialog_services_select, null)
+            val rv = dialogView.findViewById<RecyclerView>(R.id.rvServicesSelect)
+            val btnApply = dialogView.findViewById<Button>(R.id.btnApplyServices)
+            val btnCancel = dialogView.findViewById<Button>(R.id.btnCancelServices)
+            
+            val tempIds = selectedServiceIds.toMutableList()
+            rv.layoutManager = LinearLayoutManager(ctx)
+            rv.adapter = ServicesSelectAdapter(servicesList, tempIds) { id, isChecked ->
+                if (isChecked) tempIds.add(id) else tempIds.remove(id)
+            }
+            
+            val dialog = AlertDialog.Builder(ctx, R.style.CustomDialog).setView(dialogView).create()
+            btnApply.setOnClickListener {
+                selectedServiceIds.clear()
+                selectedServiceIds.addAll(tempIds)
+                selectedServiceNames.clear()
+                var total = 0.0
+                for (s in servicesList) {
+                    if (selectedServiceIds.contains(s.service_id ?: "")) {
+                        selectedServiceNames.add(s.service_name ?: "")
+                        total += s.price?.replace(",", "")?.toDoubleOrNull() ?: 0.0
+                    }
+                }
+                tvSelectServices.text = if (selectedServiceNames.isEmpty()) "Choose Services..." else selectedServiceNames.joinToString(", ")
+                tvEstimate.text = String.format("\u20b1%.2f", total)
+                updateTimeSlots()
+                updateMechanicSpinner()
+                dialog.dismiss()
+            }
+            btnCancel.setOnClickListener { dialog.dismiss() }
+            dialog.show()
+            
+            val width = (resources.displayMetrics.widthPixels * 0.90).toInt()
+            dialog.window?.setLayout(width, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
+        }
+
+        // Initial fetch of services
         api.getServices(action = "get_services", tenantId = tid).enqueue(object : Callback<ServiceResponse> {
             override fun onResponse(call: Call<ServiceResponse>, response: Response<ServiceResponse>) {
                 if (isAdded && response.isSuccessful) {
                     servicesList = response.body()?.data ?: emptyList()
-                    tvSelectServices.setOnClickListener {
-                        if (servicesList.isEmpty()) {
-                            Toast.makeText(ctx, "Services not loaded. Check server.", Toast.LENGTH_SHORT).show()
-                            return@setOnClickListener
-                        }
-                        
-                        val dialogView = LayoutInflater.from(ctx).inflate(R.layout.dialog_services_select, null)
-                        val rv = dialogView.findViewById<RecyclerView>(R.id.rvServicesSelect)
-                        val btnApply = dialogView.findViewById<Button>(R.id.btnApplyServices)
-                        val btnCancel = dialogView.findViewById<Button>(R.id.btnCancelServices)
-                        
-                        val tempIds = selectedServiceIds.toMutableList()
-                        rv.layoutManager = LinearLayoutManager(ctx)
-                        rv.adapter = ServicesSelectAdapter(servicesList, tempIds) { id, isChecked ->
-                            if (isChecked) tempIds.add(id) else tempIds.remove(id)
-                        }
-                        
-                        val dialog = AlertDialog.Builder(ctx, R.style.CustomDialog).setView(dialogView).create()
-                        btnApply.setOnClickListener {
-                            selectedServiceIds.clear()
-                            selectedServiceIds.addAll(tempIds)
-                            selectedServiceNames.clear()
-                            var total = 0.0
-                            for (s in servicesList) {
-                                if (selectedServiceIds.contains(s.service_id ?: "")) {
-                                    selectedServiceNames.add(s.service_name ?: "")
-                                    total += s.price?.replace(",", "")?.toDoubleOrNull() ?: 0.0
-                                }
-                            }
-                            tvSelectServices.text = if (selectedServiceNames.isEmpty()) "Choose Services..." else selectedServiceNames.joinToString(", ")
-                            tvEstimate.text = String.format("\u20b1%.2f", total)
-                            updateTimeSlots()
-                            updateMechanicSpinner()
-                            dialog.dismiss()
-                        }
-                        btnCancel.setOnClickListener { dialog.dismiss() }
-                        dialog.show()
-                        
-                        val width = (resources.displayMetrics.widthPixels * 0.90).toInt()
-                        dialog.window?.setLayout(width, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
-                    }
                 }
             }
-            override fun onFailure(call: Call<ServiceResponse>, t: Throwable) {
-                if (isAdded) Toast.makeText(ctx, "Services Fetch Error", Toast.LENGTH_SHORT).show()
-            }
+            override fun onFailure(call: Call<ServiceResponse>, t: Throwable) {}
         })
 
         // 4. Mechanic logic handled inside updateMechanicSpinner() which is triggered by date/time selection
@@ -703,20 +724,24 @@ class GarageFragment : Fragment(R.layout.fragment_garage) {
                         emptyLayout.visibility = if (currentList.isEmpty()) View.VISIBLE else View.GONE
                     }
 
-                    api.deleteVehicle(action = "delete_vehicle_mobile", vehicleId = vehicleId, customerId = sm.getCustomerId() ?: "")
+                    api.deleteVehicle(action = "delete_vehicle_mobile", tid = tid, vehicleId = vehicleId, customerId = sm.getCustomerId() ?: "")
                         .enqueue(object : Callback<BaseResponse> {
-                            override fun onResponse(call: Call<BaseResponse>, response: Response<BaseResponse>) {
-                                if (response.isSuccessful && response.body()?.status == "success") {
-                                    Toast.makeText(ctx, "Vehicle removed from garage", Toast.LENGTH_SHORT).show()
-                                } else {
-                                    // REVERT if server failed
-                                    val msg = "HTTP ${response.code()}"
-                                    if (isAdded) {
-                                        Toast.makeText(ctx, "Error: $msg", Toast.LENGTH_LONG).show()
-                                        refreshGarage() 
-                                    }
+                        override fun onResponse(call: Call<BaseResponse>, response: Response<BaseResponse>) {
+                            val body = response.body()
+                            if (response.isSuccessful && body?.status == "success") {
+                                Toast.makeText(ctx, "Vehicle removed successfully", Toast.LENGTH_SHORT).show()
+                                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                    refreshGarage()
+                                }, 500)
+                            } else {
+                                // REVERT if server actually failed or unauthorized
+                                val msg = body?.message ?: "Error ${response.code()}"
+                                if (isAdded) {
+                                    Toast.makeText(ctx, "Deletion Failed: $msg", Toast.LENGTH_LONG).show()
+                                    refreshGarage() 
                                 }
                             }
+                        }
                             override fun onFailure(call: Call<BaseResponse>, t: Throwable) {
                                 if (isAdded) {
                                     Toast.makeText(ctx, "Error: ${t.localizedMessage}", Toast.LENGTH_LONG).show()
@@ -824,16 +849,37 @@ class HistoryFragment : Fragment(R.layout.fragment_history) {
 
         api.getHistory(action = "get_history", tenantId = sm.getTenantId() ?: "1", customerId = sm.getCustomerId() ?: "").enqueue(object : Callback<HistoryResponse> {
             override fun onResponse(call: Call<HistoryResponse>, response: Response<HistoryResponse>) {
-                if (isAdded && response.isSuccessful) {
-                    val body = response.body()
-                    val repairList = body?.repairs ?: emptyList()
-                    apptAdapter.updateData(repairList)
-                    repairAdapter.updateData(repairList)
-                    body?.payments?.let { payAdapter.updateData(it) }
+                if (!isAdded) return
+                try {
+                    if (response.isSuccessful) {
+                        val body = response.body()
+                        if (body?.status == "success") {
+                            val repairList = body.repairs ?: body.bookings ?: body.services ?: emptyList()
+                            
+                            apptAdapter.updateData(repairList.filter { 
+                                val s = it.status?.lowercase() ?: ""
+                                s != "completed" && s != "cancelled" 
+                            })
+                            repairAdapter.updateData(repairList)
+                            
+                            val paymentList = body.payments ?: emptyList()
+                            payAdapter.updateData(paymentList)
+                        } else {
+                            // Server returned status: error
+                            val msg = body?.message ?: "Server reported an error fetching history"
+                            Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        // HTTP Error (e.g. 400, 500)
+                        Toast.makeText(ctx, "Server Error: ${response.code()}", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("HISTORY_CRASH", "Error processing history", e)
+                    // If it still crashes here, we catch it so the app doesn't exit
                 }
             }
             override fun onFailure(call: Call<HistoryResponse>, t: Throwable) {
-                if (isAdded) Toast.makeText(ctx, "History Sync Failed", Toast.LENGTH_SHORT).show()
+                if (isAdded) Toast.makeText(ctx, "Network Error: Check Connection", Toast.LENGTH_SHORT).show()
             }
         })
     }
