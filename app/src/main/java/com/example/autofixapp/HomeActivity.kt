@@ -138,7 +138,16 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         val cid = sm.getCustomerId() ?: ""
 
         // Update User Name
-        view.findViewById<TextView>(R.id.tvWelcomeName).text = "Hi, ${sm.getCustomerName() ?: "Hershey"}!"
+        val rawName = sm.getCustomerName() ?: ""
+        val displayName = if (rawName.isBlank() || rawName.lowercase() == "user") {
+            val email = sm.getCustomerEmail() ?: ""
+            if (email.contains("@")) {
+                email.split("@")[0].replace(".", " ").replace("_", " ")
+                    .split(" ").joinToString(" ") { it.replaceFirstChar { char -> char.uppercase() } }
+            } else { "Valued Customer" }
+        } else { rawName }
+        
+        view.findViewById<TextView>(R.id.tvWelcomeName).text = "Hi, $displayName!"
 
         // 1. Fetch Loyalty Points & Promos
         val tvPoints = view.findViewById<TextView>(R.id.tvLoyaltyPoints)
