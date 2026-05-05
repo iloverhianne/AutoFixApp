@@ -1,20 +1,20 @@
 package com.example.autofixapp
 
 data class LoginResponse(
-    val status: String,
-    val message: String,
-    val customer_id: String?,
-    val name: String?,
-    val email: String?,
-    val tenant_id: String?, // Added this to identify the shop
-    val shop_name: String?,
+    val status: String? = null,
+    val message: String? = null,
+    val customer_id: String? = null,
+    val name: String? = null,
+    val email: String? = null,
+    val tenant_id: String? = null,
+    val shop_name: String? = null,
     val role: String? = "CUSTOMER",
-    val shops: List<Shop>?
+    val shops: List<Shop>? = null
 )
 
 data class Shop(
-    val tenant_id: String,
-    val shop_name: String,
-    val customer_id: String,
-    val name: String
+    val tenant_id: String? = null,
+    val shop_name: String? = null,
+    val customer_id: String? = null,
+    val name: String? = null
 )

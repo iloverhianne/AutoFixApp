@@ -379,12 +379,19 @@ class PaymentActivity : AppCompatActivity() {
                     mechanicName?.let { editor.putString("booked_mech_name_${date}_${time}", it) }
                     editor.apply()
 
+                    // Determine exact amount to record based on payment type selected
+                    val finalAmountToRecord = if (rbDownpayment.isChecked) {
+                        fullAmount * 0.20
+                    } else {
+                        fullAmount
+                    }
+
                     // Record payment in background to ensure it reflects on Web Dashboard
                     apiService.recordPayment(
                         action = "record_payment",
                         tenantId = tid,
                         customerId = customerId,
-                        amount = String.format("%.2f", amountToPay),
+                        amount = String.format("%.2f", finalAmountToRecord),
                         type = payType,
                         method = paymentMethod,
                         refId = appointmentId

@@ -161,7 +161,14 @@ class MainActivity : AppCompatActivity() {
             .setTitle("Which workshop to view?")
             .setItems(shopNames) { _, which ->
                 val selected = shops[which]
-                proceedToDashboard(selected.customer_id, selected.name, response.email ?: "", selected.tenant_id, selected.shop_name, response.role ?: "CUSTOMER")
+                proceedToDashboard(
+                    selected.customer_id ?: "",
+                    selected.name ?: "",
+                    response.email ?: "",
+                    selected.tenant_id ?: "1",
+                    selected.shop_name ?: "AutoFix Shop",
+                    response.role ?: "CUSTOMER"
+                )
             }
             .setCancelable(false)
             .show()

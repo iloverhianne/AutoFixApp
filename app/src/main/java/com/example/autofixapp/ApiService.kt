@@ -7,33 +7,32 @@ interface ApiService {
     @FormUrlEncoded
     @POST("api-mobile.php")
     fun login(
-        @Query("action") action: String = "login",
+        @Query("action") action: String,
         @Field("email") email: String,
         @Field("password") password: String
     ): Call<LoginResponse>
 
-    // 2.5.2 Service Appointment Booking
     @GET("api-mobile.php")
     fun getGarage(
-        @Query("action") action: String = "get_garage",
+        @Query("action") action: String,
         @Query("customer_id") customerId: String,
         @Query("tid") tenantId: String
     ): Call<GarageResponse>
 
     @GET("api-mobile.php")
     fun getServices(
-        @Query("action") action: String = "get_services",
+        @Query("action") action: String,
         @Query("tid") tenantId: String
     ): Call<ServiceResponse>
 
     @FormUrlEncoded
     @POST("api-mobile.php")
     fun bookAppointment(
-        @Query("action") action: String = "book_appointment",
+        @Query("action") action: String,
         @Query("tid") tenantId: String,
         @Field("customer_id") customerId: String,
         @Field("service_id") serviceId: String,
-        @Field("vehicle_id") vehicleId: String = "0",
+        @Field("vehicle_id") vehicleId: String,
         @Field("date") date: String,
         @Field("time") time: String,
         @Field("estimate") estimate: String,
@@ -43,48 +42,45 @@ interface ApiService {
 
     @GET("api-mobile.php")
     fun getAvailability(
-        @Query("action") action: String = "get_availability",
+        @Query("action") action: String,
         @Query("tid") tenantId: String
     ): Call<AvailabilityResponse>
 
     @GET("api-mobile.php")
     fun getMechanicsAndBays(
-        @Query("action") action: String = "get_mechanics_and_bays",
+        @Query("action") action: String,
         @Query("tid") tenantId: String
     ): Call<MechanicsBaysResponse>
 
     @GET("api-mobile.php")
     fun getAvailableMechanics(
-        @Query("action") action: String = "get_available_mechanics",
+        @Query("action") action: String,
         @Query("tid") tenantId: String,
         @Query("date") date: String,
         @Query("time") time: String
     ): Call<MechanicsBaysResponse>
 
-    // 2.5.4 Repair Status Tracking
     @FormUrlEncoded
     @POST("api-mobile.php")
     fun trackRepair(
-        @Query("action") action: String = "track_repair",
+        @Query("action") action: String,
         @Query("tid") tenantId: String,
         @Field("job_id") jobId: String,
         @Field("customer_id") customerId: String
     ): Call<TrackingResponse>
 
-    // 2.5.5 Service & Payment History
     @GET("api-mobile.php")
     fun getHistory(
-        @Query("action") action: String = "get_history",
+        @Query("action") action: String,
         @Query("tid") tenantId: String,
-        @Query("customer_id") customerId: String
+        @Query("customer_id") customerId: String,
+        @Query("email") email: String = ""
     ): Call<HistoryResponse>
-
-    // 2.5.6 Garage / Vehicle Management
 
     @FormUrlEncoded
     @POST("api-mobile.php")
     fun addVehicle(
-        @Query("action") action: String = "add_vehicle",
+        @Query("action") action: String,
         @Field("tid") tid: String,
         @Field("customer_id") customerId: String,
         @Field("plate_no") plateNo: String,
@@ -96,35 +92,32 @@ interface ApiService {
     @FormUrlEncoded
     @POST("api-mobile.php")
     fun deleteVehicle(
-        @Query("action") action: String = "delete_vehicle_mobile",
+        @Query("action") action: String,
         @Field("tid") tid: String,
         @Field("vehicle_id") vehicleId: String,
         @Field("customer_id") customerId: String
     ): Call<BaseResponse>
 
-    // 2.5.7 Loyalty & Rewards
     @GET("api-mobile.php")
     fun getLoyaltyStatus(
-        @Query("action") action: String = "loyalty_status",
+        @Query("action") action: String,
         @Query("tid") tenantId: String,
         @Query("customer_id") customerId: String
     ): Call<LoyaltyResponse>
 
-    // 2.5.8 Reviews & Ratings
     @FormUrlEncoded
     @POST("api-mobile.php")
     fun submitReview(
-        @Query("action") action: String = "submit_review",
+        @Query("action") action: String,
         @Query("tid") tenantId: String,
         @Field("job_id") jobId: String,
         @Field("rating") rating: Int,
         @Field("comment") comment: String
     ): Call<BaseResponse>
 
-    // 2.5.9 Chat & Support
     @GET("api-mobile.php")
     fun getMessages(
-        @Query("action") action: String = "get_messages",
+        @Query("action") action: String,
         @Query("tid") tenantId: String,
         @Query("customer_id") customerId: String
     ): Call<ChatResponse>
@@ -132,7 +125,7 @@ interface ApiService {
     @FormUrlEncoded
     @POST("api-mobile.php")
     fun sendMessage(
-        @Query("action") action: String = "send_message",
+        @Query("action") action: String,
         @Query("tid") tenantId: String,
         @Field("customer_id") customerId: String,
         @Field("message") message: String
@@ -141,7 +134,7 @@ interface ApiService {
     @FormUrlEncoded
     @POST("api-mobile.php")
     fun createPaymentIntent(
-        @Query("action") action: String = "create_payment_intent",
+        @Query("action") action: String,
         @Query("tid") tenantId: String,
         @Field("customer_id") customerId: String,
         @Field("amount") amount: String,
@@ -151,7 +144,7 @@ interface ApiService {
     @FormUrlEncoded
     @POST("api-mobile.php")
     fun recordPayment(
-        @Query("action") action: String = "record_payment",
+        @Query("action") action: String,
         @Query("tid") tenantId: String,
         @Field("customer_id") customerId: String,
         @Field("amount") amount: String,
@@ -162,75 +155,76 @@ interface ApiService {
 
     @GET("api-mobile.php")
     fun getBookedSlots(
-        @Query("action") action: String = "get_booked_slots",
+        @Query("action") action: String,
         @Query("tid") tenantId: String,
         @Query("date") date: String
     ): Call<BookedSlotsResponse>
     
     @GET("api-mobile.php")
     fun getSchedules(
-        @Query("action") action: String = "get_schedules",
+        @Query("action") action: String,
         @Query("tid") tenantId: String,
         @Query("date") date: String,
         @Query("service_id") serviceId: String
     ): Call<SchedulesResponse>
 }
 
+// All response classes with Nullable types and Default Values for GSON stability
+
 data class PaymentIntentResponse(
-    val status: String,
-    val checkout_url: String,
-    val transaction_id: String
+    val status: String? = null,
+    val checkout_url: String? = null,
+    val transaction_id: String? = null
 )
 
 data class BookedSlotsResponse(
-    val status: String,
-    val booked_slots: List<String>
+    val status: String? = null,
+    val booked_slots: List<String>? = null
 )
 
 data class ScheduleSlot(
-    val schedule_id: Int,
-    val time_slot_id: Int,
-    val start_time: String,
-    val end_time: String,
-    val display_time: String,
-    val available_mechanics_count: Int,
-    val time_range: String // Kept for backward compatibility
+    val schedule_id: Int? = null,
+    val time_slot_id: Int? = null,
+    val start_time: String? = null,
+    val end_time: String? = null,
+    val display_time: String? = null,
+    val available_mechanics_count: Int? = null,
+    val time_range: String? = null
 )
 
 data class SchedulesResponse(
-    val success: Boolean,
+    val success: Boolean? = null,
     val status: String? = null,
     val message: String? = null,
     val time_slots: List<ScheduleSlot>? = null,
-    val schedules: List<ScheduleSlot>? = null // Kept for backward compatibility
+    val schedules: List<ScheduleSlot>? = null
 )
 
-// Response Wrappers
 data class ServiceResponse(
-    val status: String,
-    val data: List<Service>
+    val status: String? = null,
+    val data: List<Service>? = null
 )
 
 data class GarageResponse(
-    val status: String,
-    val data: List<Vehicle>
+    val status: String? = null,
+    val data: List<Vehicle>? = null
 )
 
 data class LoyaltyResponse(
-    val status: String,
-    val points: Int,
-    @com.google.gson.annotations.SerializedName("member_level") val tier: String?,
-    @com.google.gson.annotations.SerializedName("next_tier") val nextTier: String?,
-    val available_promos: List<Promo>?
+    val status: String? = null,
+    val points: Int? = null,
+    @com.google.gson.annotations.SerializedName("member_level") val tier: String? = null,
+    @com.google.gson.annotations.SerializedName("next_tier") val nextTier: String? = null,
+    val available_promos: List<Promo>? = null
 )
 
 data class ChatResponse(
-    val status: String,
-    val data: List<Message>
+    val status: String? = null,
+    val data: List<Message>? = null
 )
 
 data class HistoryResponse(
-    val status: String,
+    val status: String? = null,
     val message: String? = null,
     val repairs: List<RepairHistory>? = null, 
     val bookings: List<RepairHistory>? = null,
@@ -239,127 +233,124 @@ data class HistoryResponse(
 )
 
 data class TrackingResponse(
-    val status: String,
-    val jobInfo: JobInfo,
-    val timeline: List<TimelineItem>
+    val status: String? = null,
+    val jobInfo: JobInfo? = null,
+    val timeline: List<TimelineItem>? = null
 )
 
 data class BaseResponse(
-    val status: String,
-    val message: String,
+    val status: String? = null,
+    val message: String? = null,
     val appointment_id: String? = null
 )
 
-// Entities
 data class Service(
-    val service_id: String?,
-    val service_name: String?,
-    val description: String?,
-    val price: String?,
+    val service_id: String? = null,
+    val service_name: String? = null,
+    val description: String? = null,
+    val price: String? = null,
     val icon_url: String? = null
 )
 
 data class Vehicle(
-    val vehicle_id: String?,
-    val plate_no: String?,
-    val make: String?,
-    val model: String?,
-    @com.google.gson.annotations.SerializedName("year_model")
-    val year: String?,
+    val vehicle_id: String? = null,
+    val plate_no: String? = null,
+    val make: String? = null,
+    val model: String? = null,
+    @com.google.gson.annotations.SerializedName("year_model") val year: String? = null,
     val last_service_date: String? = null,
     val active_jobs: Int? = 0
 )
 
 data class Message(
-    val message_id: String?,
-    val sender_type: String?, // 'customer' or 'shop'
-    val content: String?,
-    val created_at: String?
+    val message_id: String? = null,
+    val sender_type: String? = null,
+    val content: String? = null,
+    val created_at: String? = null
 )
 
 data class Promo(
-    val promo_id: String?,
-    val title: String?,
-    val description: String?,
-    val discount: String?
+    val promo_id: String? = null,
+    val title: String? = null,
+    val description: String? = null,
+    val discount: String? = null
 )
 
 data class RepairHistory(
-    val job_id: String?,
-    val plate_no: String?,
+    val job_id: String? = null,
+    val plate_no: String? = null,
     val service_name: String? = "General Repair",
-    val status: String?,
-    val total_amount: String?,
+    val status: String? = null,
+    val total_amount: String? = null,
     val paid_amount: String? = "0.00",
-    @com.google.gson.annotations.SerializedName("date", alternate = ["appointment_date", "scheduled_date"])
-    val date: String?,
-    @com.google.gson.annotations.SerializedName("time", alternate = ["appointment_time", "scheduled_time", "service_time", "booking_time"])
-    val time: String? = null,
+    @com.google.gson.annotations.SerializedName("date") val date: String? = null,
+    @com.google.gson.annotations.SerializedName("time") val time: String? = null,
     val created_at: String? = null,
-    val rating: Int? = null // For reviews
+    val rating: Int? = null
 )
 
 data class PaymentHistory(
-    val amount: String?,
-    val payment_method: String?,
-    val payment_type: String?,
-    val method: String? = null, // Backward compatibility
-    val type: String? = null,    // Backward compatibility
-    val status: String?,
-    @com.google.gson.annotations.SerializedName("date", alternate = ["created_at"])
-    val date: String?,
+    val amount: String? = null,
+    val payment_method: String? = null,
+    val payment_type: String? = null,
+    val method: String? = null,
+    val type: String? = null,
+    val status: String? = null,
+    val date: String? = null,
     val time: String? = null,
     val created_at: String? = null,
     val plate_no: String? = null,
-    val service_name: String? = null
+    val service_name: String? = null,
+    val appointment_id: String? = null,
+    val ref_id: String? = null
 )
 
 data class JobInfo(
-    val status: String?,
-    val total_amount: String?,
-    val notes: String?,
-    val plate_no: String?,
-    val make: String?,
-    val model: String?
+    val status: String? = null,
+    val total_amount: String? = null,
+    val notes: String? = null,
+    val plate_no: String? = null,
+    val make: String? = null,
+    val model: String? = null
 )
 
 data class BookingInitResponse(
-    val status: String?,
-    val vehicles: List<Vehicle>?,
-    val services: List<Service>?,
-    val mechanics: List<Mechanic>?,
-    val bays: List<Bay>?
+    val status: String? = null,
+    val vehicles: List<Vehicle>? = null,
+    val services: List<Service>? = null,
+    val mechanics: List<Mechanic>? = null,
+    val bays: List<Bay>? = null
 )
 
 data class AvailabilityResponse(
-    val status: String?,
-    val available_mechanics: Any?, // Flexible for String or Int
-    val available_bays: Any?,
-    val waiting_time: String?,
-    val active_jobs: Any?
+    val status: String? = null,
+    val available_mechanics: String? = null,
+    val available_bays: String? = null,
+    val waiting_time: String? = null,
+    val active_jobs: String? = null
 )
 
 data class MechanicsBaysResponse(
-    val status: String?,
-    val mechanics: List<Mechanic>?,
-    val bays: List<Bay>?
+    val status: String? = null,
+    val mechanics: List<Mechanic>? = null,
+    val bays: List<Bay>? = null
 )
 
 data class Mechanic(
-    val mechanic_id: String?,
-    val full_name: String?,
-    val specialization: String?,
+    val mechanic_id: String? = null,
+    val full_name: String? = null,
+    val specialization: String? = null,
     val avatar_url: String? = null
 )
 
 data class Bay(
-    val bay_id: String?,
-    val bay_name: String?
+    val bay_id: String? = null,
+    val bay_name: String? = null
 )
 
 data class TimelineItem(
-    val status_update: String?,
-    val remarks: String?,
-    val created_at: String?,
-    val inspection_photo: String? = null // For visual updates
+    val status_update: String? = null,
+    val remarks: String? = null,
+    val created_at: String? = null,
+    val inspection_photo: String? = null
 )

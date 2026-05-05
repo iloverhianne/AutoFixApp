@@ -9,7 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import androidx.core.content.ContextCompat
 
-class AppointmentAdapter(private var appointments: List<RepairHistory>) :
+class AppointmentAdapter(private var appointments: List<RepairHistory>, private val onItemClick: ((String) -> Unit)? = null) :
     RecyclerView.Adapter<AppointmentAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -73,6 +73,10 @@ class AppointmentAdapter(private var appointments: List<RepairHistory>) :
             
             holder.tvStatus.setTextColor(ContextCompat.getColor(context, colorRes))
             holder.tvStatus.setBackgroundResource(bgRes)
+
+            holder.itemView.setOnClickListener {
+                onItemClick?.invoke(appt.job_id ?: "")
+            }
         } catch (e: Exception) {
             android.util.Log.e("APPT_ADAPTER_ERROR", "Error binding appt item", e)
         }

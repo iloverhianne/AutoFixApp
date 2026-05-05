@@ -58,7 +58,9 @@ class PaymentHistoryAdapter(private var payments: List<PaymentHistory>) :
             } else rawDate
 
             holder.tvDate.text = displayDate
-            holder.tvType.text = type.replace("_", " ").uppercase()
+            val jobId = payment.ref_id ?: payment.appointment_id ?: ""
+            val displayJobId = if (jobId.isNotEmpty()) " #$jobId" else ""
+            holder.tvType.text = "${type.replace("_", " ").uppercase()}$displayJobId"
             holder.tvAmount.text = "₱${payment.amount ?: "0.00"}"
 
             if (!payment.plate_no.isNullOrEmpty() || !payment.service_name.isNullOrEmpty()) {

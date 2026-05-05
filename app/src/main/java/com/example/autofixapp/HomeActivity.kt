@@ -42,59 +42,37 @@ class HomeActivity : AppCompatActivity() {
             }
             setupBottomNavListener(bottomNav)
 
-            // Handle Back Press - ensure we stay in HomeActivity unless double-pressed on Home tab
-            onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    val bottomNavView = findViewById<BottomNavigationView>(R.id.bottom_navigation)
-                    val currentItemId = bottomNavView?.selectedItemId
-
-                    android.util.Log.d("NAV_DEBUG", "Back pressed. Current tab ID: $currentItemId")
-
-                    if (bottomNavView != null && currentItemId != R.id.nav_home) {
-                        android.util.Log.d("NAV_DEBUG", "Redirecting back to Home tab")
-                        // If not on Home tab, go back to Home tab first
-                        bottomNavView.selectedItemId = R.id.nav_home
-                        // Note: setupBottomNavListener will handle the actual loadFragment call
-                    } else {
-                        // If already on Home tab or bottomNav is missing, perform the double-back-to-exit logic
-                        val currentTime = System.currentTimeMillis()
-                        if (backPressedTime + 2000 > currentTime) {
-                            android.util.Log.d("NAV_DEBUG", "Exit threshold met, finishing HomeActivity")
-                            if (::backToast.isInitialized) backToast.cancel()
-                            finish()
-                        } else {
-                            android.util.Log.d("NAV_DEBUG", "Exit threshold not met, showing toast")
-                            backToast = Toast.makeText(baseContext, "Press back again to exit", Toast.LENGTH_SHORT)
-                            backToast.show()
-                            backPressedTime = currentTime
-                        }
-                    }
-                }
-            })
-
-            // Initial Fragment
-            val navigateTo = intent.getStringExtra("NAVIGATE_TO")
-            android.util.Log.d("NAV_DEBUG", "Starting HomeActivity with NAVIGATE_TO: $navigateTo")
-
-            if (navigateTo == "track") {
-                android.util.Log.d("NAV_DEBUG", "Directing to Tracking via Garage tab")
-                bottomNav.selectedItemId = R.id.nav_garage
-                // Note: The listener will call loadFragment(GarageFragment())
-                // But we want TrackingFragment, so we call it AFTER the listener might have fired
-                loadFragment(TrackingFragment().apply {
-                    arguments = Bundle().apply {
-                        putString("JOB_ID", intent.getStringExtra("JOB_ID"))
-                    }
-                })
-            } else if (navigateTo == "history") {
-                android.util.Log.d("NAV_DEBUG", "Directing to History tab")
-                bottomNav.selectedItemId = R.id.nav_history
-            } else {
-                android.util.Log.d("NAV_DEBUG", "Defaulting to Home tab")
-                bottomNav.selectedItemId = R.id.nav_home
-            }
         } catch (e: Exception) {
             Toast.makeText(this, "Home Error: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+
+        // Handle initial navigation if any
+        handleIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent?) {
+        val navigateTo = intent?.getStringExtra("NAVIGATE_TO")
+        val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_navigation) ?: return
+        
+        when (navigateTo) {
+            "history" -> bottomNav.selectedItemId = R.id.nav_history
+            "track" -> {
+                bottomNav.selectedItemId = R.id.nav_garage
+                loadFragment(TrackingFragment().apply {
+                    arguments = Bundle().apply { putString("JOB_ID", intent.getStringExtra("JOB_ID")) }
+                }, addToBackStack = true)
+            }
+            else -> {
+                if (supportFragmentManager.findFragmentById(R.id.fragment_container) == null) {
+                    bottomNav.selectedItemId = R.id.nav_home
+                }
+            }
         }
     }
 
@@ -110,7 +88,6 @@ class HomeActivity : AppCompatActivity() {
             }
             
             if (fragment != null) {
-                // If the user clicks the tab they are already on, force a refresh
                 val isSameTab = bottomNav.selectedItemId == item.itemId
                 loadFragment(fragment, forceRefresh = isSameTab)
             }
@@ -118,31 +95,26 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
-    fun loadFragment(fragment: Fragment, forceRefresh: Boolean = false) {
+    fun loadFragment(fragment: Fragment, forceRefresh: Boolean = false, addToBackStack: Boolean = false) {
+        if (isFinishing || isDestroyed) return
+        
+        val fm = supportFragmentManager
         val fragmentTag = fragment.javaClass.simpleName
-        android.util.Log.d("NAV_DEBUG", "loadFragment called: $fragmentTag (force=$forceRefresh)")
+        val currentFragment = fm.findFragmentById(R.id.fragment_container)
 
-        if (isFinishing || isDestroyed) {
-            android.util.Log.w("NAV_DEBUG", "Skipping loadFragment: Activity is finishing or destroyed")
+        if (!forceRefresh && !addToBackStack && currentFragment != null && currentFragment.javaClass == fragment.javaClass) {
             return
         }
 
-        // Check if we're already showing this fragment type to prevent flickering/state resets
-        val currentFragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
-        if (!forceRefresh && currentFragment != null && currentFragment.javaClass == fragment.javaClass) {
-            android.util.Log.d("NAV_DEBUG", "Skipping loadFragment: Same fragment already visible ($fragmentTag)")
-            return
+        val transaction = fm.beginTransaction()
+            .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out)
+            .replace(R.id.fragment_container, fragment, fragmentTag)
+        
+        if (addToBackStack) {
+            transaction.addToBackStack(fragmentTag)
         }
-
-        try {
-            supportFragmentManager.beginTransaction()
-                .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out)
-                .replace(R.id.fragment_container, fragment, fragmentTag)
-                .commitAllowingStateLoss() // Safer for async/lifecycle events
-            android.util.Log.d("NAV_DEBUG", "Fragment transaction committed: $fragmentTag")
-        } catch (e: Exception) {
-            android.util.Log.e("NAV_DEBUG", "Error in loadFragment", e)
-        }
+        
+        transaction.commitAllowingStateLoss()
     }
 
     override fun onPause() {
@@ -511,8 +483,8 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
                                 spinnerTime.isEnabled = false
                             } else {
                                 val available = scheduleSlotsList.map { 
-                                    if (it.available_mechanics_count > 0) it.display_time 
-                                    else "${it.display_time} (Fully Booked)"
+                                    if ((it.available_mechanics_count ?: 0) > 0) it.display_time ?: "--:--"
+                                    else "${it.display_time ?: "--:--"} (Fully Booked)"
                                 }
                                 val adapter = ArrayAdapter(ctx, R.layout.spinner_item, android.R.id.text1, available)
                                 adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
@@ -628,7 +600,7 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
             override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
                 // Update Estimated Time text with the selected schedule time range
                 val selectedSlot = scheduleSlotsList.getOrNull(position)
-                if (selectedSlot != null && selectedSlot.available_mechanics_count > 0) {
+                if (selectedSlot != null && (selectedSlot.available_mechanics_count ?: 0) > 0) {
                     tvEstimatedTime.text = selectedSlot.display_time
                 } else {
                     tvEstimatedTime.text = "--"
@@ -692,7 +664,7 @@ class BookingFragment : Fragment(R.layout.fragment_booking) {
             }
 
             val selectedSlot = scheduleSlotsList.getOrNull(spinnerTime.selectedItemPosition)
-            if (selectedSlot == null || selectedSlot.available_mechanics_count <= 0) {
+            if (selectedSlot == null || (selectedSlot.available_mechanics_count ?: 0) <= 0) {
                 Toast.makeText(ctxInner, "Please select an available time slot.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
@@ -777,7 +749,7 @@ class GarageFragment : Fragment(R.layout.fragment_garage) {
             if (vehicle.active_jobs != null && vehicle.active_jobs > 0) {
                 (activity as? HomeActivity)?.loadFragment(TrackingFragment().apply {
                     arguments = Bundle().apply { putString("JOB_ID", jobId) }
-                })
+                }, addToBackStack = true)
             } else {
                 // Otherwise show standard removal dialog
                 showRemovalDialog(ctx, vehicle) { refreshGarage() }
@@ -874,101 +846,109 @@ class HistoryFragment : Fragment(R.layout.fragment_history) {
     private lateinit var payAdapter: PaymentHistoryAdapter
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        val ctx = requireContext()
-        val sm = SessionManager(ctx)
-        val api = RetrofitClient.getApiService(ctx)
+        val ctx = context ?: return
+        val tvStatus = view.findViewById<TextView>(R.id.tvHistoryStatus)
+        
+        try {
+            val sm = SessionManager(ctx)
+            val api = RetrofitClient.getApiService(ctx)
 
-        val rvAppt = view.findViewById<RecyclerView>(R.id.rvAppointments)
-        val rvRepair = view.findViewById<RecyclerView>(R.id.rvHistory)
-        val rvPay = view.findViewById<RecyclerView>(R.id.rvPayments)
-        val rgTabs = view.findViewById<android.widget.RadioGroup>(R.id.rgTabs)
+            val rvAppt = view.findViewById<RecyclerView>(R.id.rvAppointments)
+            val rvRepair = view.findViewById<RecyclerView>(R.id.rvHistory)
+            val rvPay = view.findViewById<RecyclerView>(R.id.rvPayments)
+            val rgTabs = view.findViewById<RadioGroup>(R.id.rgTabs)
 
-        apptAdapter = AppointmentAdapter(emptyList())
-        repairAdapter = HistoryAdapter(emptyList()) { jobId ->
-            // On Item Click: Navigate to TrackingFragment
-            (activity as? HomeActivity)?.loadFragment(TrackingFragment().apply {
-                arguments = Bundle().apply { putString("JOB_ID", jobId) }
-            })
-        }
-        payAdapter = PaymentHistoryAdapter(emptyList())
+            if (rvAppt == null || rvRepair == null || rvPay == null || rgTabs == null) {
+                tvStatus?.visibility = View.VISIBLE
+                tvStatus?.text = "UI initialization error: Some views not found."
+                return
+            }
 
-        rvAppt.layoutManager = LinearLayoutManager(ctx)
-        rvAppt.adapter = apptAdapter
-        rvRepair.layoutManager = LinearLayoutManager(ctx)
-        rvRepair.adapter = repairAdapter
-        rvPay.layoutManager = LinearLayoutManager(ctx)
-        rvPay.adapter = payAdapter
+            apptAdapter = AppointmentAdapter(emptyList()) { jobId ->
+                (activity as? HomeActivity)?.loadFragment(TrackingFragment().apply {
+                    arguments = Bundle().apply { putString("JOB_ID", jobId) }
+                }, addToBackStack = true)
+            }
+            repairAdapter = HistoryAdapter(emptyList()) { jobId ->
+                (activity as? HomeActivity)?.loadFragment(TrackingFragment().apply {
+                    arguments = Bundle().apply { putString("JOB_ID", jobId) }
+                }, addToBackStack = true)
+            }
+            payAdapter = PaymentHistoryAdapter(emptyList())
 
-        // Tab Switching Logic
-        rgTabs.setOnCheckedChangeListener { _, checkedId ->
-            rvAppt.visibility = if (checkedId == R.id.rbAppointments) View.VISIBLE else View.GONE
-            rvRepair.visibility = if (checkedId == R.id.rbRepairs) View.VISIBLE else View.GONE
-            rvPay.visibility = if (checkedId == R.id.rbPayments) View.VISIBLE else View.GONE
-        }
+            rvAppt.layoutManager = LinearLayoutManager(ctx)
+            rvAppt.adapter = apptAdapter
+            rvRepair.layoutManager = LinearLayoutManager(ctx)
+            rvRepair.adapter = repairAdapter
+            rvPay.layoutManager = LinearLayoutManager(ctx)
+            rvPay.adapter = payAdapter
 
-        val tvStatus = view.findViewById<android.widget.TextView>(R.id.tvHistoryStatus)
+            rgTabs.setOnCheckedChangeListener { _, checkedId ->
+                rvAppt.visibility = if (checkedId == R.id.rbAppointments) View.VISIBLE else View.GONE
+                rvRepair.visibility = if (checkedId == R.id.rbRepairs) View.VISIBLE else View.GONE
+                rvPay.visibility = if (checkedId == R.id.rbPayments) View.VISIBLE else View.GONE
+            }
 
-        api.getHistory(action = "get_history", tenantId = sm.getTenantId() ?: "1", customerId = sm.getCustomerId() ?: "").enqueue(object : Callback<HistoryResponse> {
-            override fun onResponse(call: Call<HistoryResponse>, response: Response<HistoryResponse>) {
-                if (!isAdded) return
-                try {
-                    if (response.isSuccessful) {
-                        val body = response.body()
-                        if (body?.status == "success") {
-                            val repairList = body.repairs ?: body.bookings ?: body.services ?: emptyList()
-                            
-                            // 1. Filter for Bookings/Active tab (Exclude completed/cancelled)
-                            val activeList = repairList.filter { 
-                                val s = it.status?.lowercase() ?: ""
-                                s != "completed" && s != "cancelled" 
-                            }
-                            apptAdapter.updateData(activeList)
-                            
-                            // 2. Filter for Repairs/History tab (Show everything but maybe prioritize completed)
-                            // Or show ONLY completed/cancelled if that's preferred.
-                            // Let's show everything in history but filter strictly for clarity if user prefers.
-                            // The user said "fix history", so let's make it show completed/cancelled here.
-                            val historyList = repairList.filter {
-                                val s = it.status?.lowercase() ?: ""
-                                s == "completed" || s == "cancelled"
-                            }
-                            repairAdapter.updateData(historyList)
-                            
-                            val paymentList = body.payments ?: emptyList()
-                            payAdapter.updateData(paymentList)
+            api.getHistory(
+                action = "get_history", 
+                tenantId = sm.getTenantId() ?: "1", 
+                customerId = sm.getCustomerId() ?: "",
+                email = sm.getCustomerEmail() ?: ""
+            ).enqueue(object : Callback<HistoryResponse> {
+                override fun onResponse(call: Call<HistoryResponse>, response: Response<HistoryResponse>) {
+                    if (!isAdded) return
+                    try {
+                        if (response.isSuccessful) {
+                            val body = response.body()
+                            if (body?.status == "success") {
+                                val repairList = body.repairs ?: body.bookings ?: body.services ?: emptyList()
+                                
+                                val activeList = repairList.filter { 
+                                    val s = it.status?.lowercase() ?: ""
+                                    // Bookings tab: Focused on upcoming/pending only
+                                    s == "pending" || s == "confirmed" 
+                                }
+                                apptAdapter.updateData(activeList)
+                                
+                                // Services tab: Show EVERYTHING (Pending, In Progress, Completed, Cancelled)
+                                // This ensures the user sees their new booking immediately here.
+                                repairAdapter.updateData(repairList)
+                                
+                                val paymentList = body.payments ?: emptyList()
+                                payAdapter.updateData(paymentList)
 
-                            if (repairList.isEmpty() && paymentList.isEmpty()) {
-                                tvStatus.visibility = View.VISIBLE
-                                tvStatus.text = "No history records found."
+                                if (repairList.isEmpty() && paymentList.isEmpty()) {
+                                    tvStatus?.visibility = View.VISIBLE
+                                    tvStatus?.text = "No history records found."
+                                } else {
+                                    tvStatus?.visibility = View.GONE
+                                }
                             } else {
-                                tvStatus.visibility = View.GONE
+                                val msg = body?.message ?: "Server error fetching history"
+                                tvStatus?.visibility = View.VISIBLE
+                                tvStatus?.text = msg
                             }
                         } else {
-                            // Server returned status: error
-                            val msg = body?.message ?: "Server reported an error fetching history"
-                            tvStatus.visibility = View.VISIBLE
-                            tvStatus.text = "Status: $msg"
-                            Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show()
+                            tvStatus?.visibility = View.VISIBLE
+                            tvStatus?.text = "Server Error: ${response.code()}"
                         }
-                    } else {
-                        // HTTP Error
-                        tvStatus.visibility = View.VISIBLE
-                        tvStatus.text = "Server Error: ${response.code()}"
+                    } catch (e: Exception) {
+                        tvStatus?.visibility = View.VISIBLE
+                        tvStatus?.text = "Error processing history"
                     }
-                } catch (e: Exception) {
-                    android.util.Log.e("HISTORY_DEBUG", "Error processing history", e)
-                    tvStatus.visibility = View.VISIBLE
-                    tvStatus.text = "Error loading data."
                 }
-            }
-            override fun onFailure(call: Call<HistoryResponse>, t: Throwable) {
-                if (isAdded) {
-                    tvStatus.visibility = View.VISIBLE
-                    tvStatus.text = "Offline: Check connection"
-                    Toast.makeText(ctx, "Network Error", Toast.LENGTH_SHORT).show()
+                override fun onFailure(call: Call<HistoryResponse>, t: Throwable) {
+                    if (isAdded) {
+                        tvStatus?.visibility = View.VISIBLE
+                        tvStatus?.text = "Offline: Check connection"
+                    }
                 }
-            }
-        })
+            })
+        } catch (e: Exception) {
+            android.util.Log.e("HISTORY_CRASH", "HistoryFragment ViewCreated Error", e)
+            tvStatus?.visibility = View.VISIBLE
+            tvStatus?.text = "Critical Error: ${e.message}"
+        }
     }
 }
 
@@ -1003,11 +983,11 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
                         if (isAdded && response.isSuccessful && response.body()?.status == "success") {
                             val data = response.body()!!
                             layoutJobDetails.visibility = View.VISIBLE
-                            tvJobStatus.text = data.jobInfo.status?.uppercase() ?: "UNKNOWN"
-                            tvJobCar.text = "${data.jobInfo.make ?: ""} ${data.jobInfo.model ?: ""}"
+                            tvJobStatus.text = data.jobInfo?.status?.uppercase() ?: "UNKNOWN"
+                            tvJobCar.text = "${data.jobInfo?.make ?: ""} ${data.jobInfo?.model ?: ""}"
                             
                             timeline.clear()
-                            timeline.addAll(data.timeline)
+                            timeline.addAll(data.timeline ?: emptyList())
                             adapter.notifyDataSetChanged()
                         } else {
                             Toast.makeText(ctx, "Job ID not found", Toast.LENGTH_SHORT).show()
@@ -1036,7 +1016,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         tvName.text = sm.getCustomerName().let { if (it.isNullOrBlank()) "Guest User" else it }
 
         layoutChat.setOnClickListener {
-            (activity as? HomeActivity)?.loadFragment(ChatFragment())
+            (activity as? HomeActivity)?.loadFragment(ChatFragment(), addToBackStack = true)
         }
 
         layoutLogout.setOnClickListener {
