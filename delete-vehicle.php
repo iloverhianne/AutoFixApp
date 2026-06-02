@@ -2,6 +2,7 @@
 /**
  * delete-vehicle.php - Isolated vehicle deletion script for maximum stability.
  */
+date_default_timezone_set('Asia/Manila');
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');

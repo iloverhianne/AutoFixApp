@@ -10,7 +10,9 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
-    private const val BASE_URL = "http://multi-tenant.ct.ws/"
+    // Change this to your local IP (e.g., "http://192.168.100.82/multitenant/") if testing on a physical device.
+    // 10.0.2.2 is the localhost loopback for the Android Emulator.
+    private const val BASE_URL = "https://multitenant.infinityfree.me/"
     const val USER_AGENT = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Mobile Safari/537.36"
     private var retrofit: Retrofit? = null
 

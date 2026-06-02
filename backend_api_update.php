@@ -3,6 +3,7 @@
  * Add these action handlers to your api-mobile.php file on the server.
  * This covers dynamic schedule generation, availability checks, and overlap detection.
  */
+date_default_timezone_set('Asia/Manila');
 
 // ---------------------------------------------------------
 // 1. GET SCHEDULES

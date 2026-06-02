@@ -60,7 +60,8 @@ class MainActivity : AppCompatActivity() {
                     android.util.Log.e("AutoFixChallenge", "Bypass Error: ${error?.description}")
                 }
             }
-            challengeWebView.loadUrl("http://multi-tenant.ct.ws/api-mobile.php")
+            // Load new domain to solve Security Challenge
+            challengeWebView.loadUrl("https://multitenant.infinityfree.me/")
             
             // Attach to root so it actually runs
             findViewById<android.view.ViewGroup>(android.R.id.content).addView(challengeWebView)

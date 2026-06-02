@@ -312,6 +312,21 @@ class PaymentActivity : AppCompatActivity() {
         apiService.recordPayment(action = "record_payment", tenantId = tid, customerId = cid, amount = String.format("%.2f", amountToPay), type = "BALANCE", method = method, refId = jobId)
             .enqueue(object : Callback<BaseResponse> {
                 override fun onResponse(call: Call<BaseResponse>, response: Response<BaseResponse>) {
+                    if (loyaltyDiscount > 0) {
+                        apiService.recordPayment(
+                            action = "record_payment",
+                            tenantId = tid,
+                            customerId = cid,
+                            amount = String.format("%.2f", loyaltyDiscount),
+                            type = "LOYALTY_REDEEM",
+                            method = "LOYALTY_POINTS",
+                            refId = jobId
+                        ).enqueue(object : Callback<BaseResponse> {
+                            override fun onResponse(call: Call<BaseResponse>, r: Response<BaseResponse>) {}
+                            override fun onFailure(call: Call<BaseResponse>, t: Throwable) {}
+                        })
+                    }
+
                     loadingOverlay.visibility = View.GONE
                     Toast.makeText(this@PaymentActivity, "Balance payment recorded!", Toast.LENGTH_LONG).show()
                     finish()
@@ -379,19 +394,12 @@ class PaymentActivity : AppCompatActivity() {
                     mechanicName?.let { editor.putString("booked_mech_name_${date}_${time}", it) }
                     editor.apply()
 
-                    // Determine exact amount to record based on payment type selected
-                    val finalAmountToRecord = if (rbDownpayment.isChecked) {
-                        fullAmount * 0.20
-                    } else {
-                        fullAmount
-                    }
-
-                    // Record payment in background to ensure it reflects on Web Dashboard
+                    // Record cash payment
                     apiService.recordPayment(
                         action = "record_payment",
                         tenantId = tid,
                         customerId = customerId,
-                        amount = String.format("%.2f", finalAmountToRecord),
+                        amount = String.format("%.2f", amountToPay),
                         type = payType,
                         method = paymentMethod,
                         refId = appointmentId
@@ -399,6 +407,22 @@ class PaymentActivity : AppCompatActivity() {
                         override fun onResponse(call: Call<BaseResponse>, r: Response<BaseResponse>) {}
                         override fun onFailure(call: Call<BaseResponse>, t: Throwable) {}
                     })
+
+                    // Record points payment if applied
+                    if (loyaltyDiscount > 0) {
+                        apiService.recordPayment(
+                            action = "record_payment",
+                            tenantId = tid,
+                            customerId = customerId,
+                            amount = String.format("%.2f", loyaltyDiscount),
+                            type = "LOYALTY_REDEEM",
+                            method = "LOYALTY_POINTS",
+                            refId = appointmentId
+                        ).enqueue(object : Callback<BaseResponse> {
+                            override fun onResponse(call: Call<BaseResponse>, r: Response<BaseResponse>) {}
+                            override fun onFailure(call: Call<BaseResponse>, t: Throwable) {}
+                        })
+                    }
 
                     Toast.makeText(this@PaymentActivity, "Booking successful!", Toast.LENGTH_LONG).show()
 

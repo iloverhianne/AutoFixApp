@@ -157,29 +157,65 @@ try {
 
         $mechs = [];
         try {
-            // 1. Fetch Mechanics directly from the 'mechanics' table
-            $mechanics_db = [];
-            $tenantCols = ['tenant_id', 'shop_id', 'id_shop', 'shopID'];
-            
-            foreach ($tenantCols as $col) {
-                try {
-                    $stmt = $db->prepare("SELECT * FROM mechanics WHERE $col = ? OR $col = '2' OR $col = '1'");
-                    $stmt->execute([$tid]);
-                    $mechanics_db = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                    if (!empty($mechanics_db)) break;
-                } catch (Exception $e) { continue; }
-            }
+            // 1. Get unavailable mechanics based on existing appointments
+            $partsRange = explode(' - ', $timeRange);
+            $dbStart = date("H:i:s", strtotime($partsRange[0] ?? $startTimeStr));
+            $dbEnd = date("H:i:s", strtotime($partsRange[1] ?? $partsRange[0] ?? $startTimeStr));
 
-            // Fallback: If no mechanics found for tenant, fetch all mechanics
+            $unavailableMechanics = [];
+            try {
+                $unavailStmt = $db->prepare("
+                    SELECT mechanic_id 
+                    FROM appointments 
+                    WHERE tenant_id = ? 
+                    AND appointment_date = ? 
+                    AND status IN ('PENDING', 'CONFIRMED', 'ONGOING', 'APPROVED')
+                    AND (
+                        (TIME(appointment_time) <= ? AND TIME(DATE_ADD(appointment_time, INTERVAL 1 HOUR)) > ?)
+                        OR
+                        (TIME(appointment_time) >= ? AND TIME(appointment_time) < ?)
+                    )
+                ");
+                $unavailStmt->execute([$tid, $date, $dbStart, $dbStart, $dbStart, $dbEnd]);
+                $unavailResults = $unavailStmt->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($unavailResults as $r) {
+                    if (!empty($r['mechanic_id'])) $unavailableMechanics[] = (string)$r['mechanic_id'];
+                }
+            } catch (Exception $e) {}
+
+            // 2. Fetch Mechanics from the 'users' table (matches the web dashboard)
+            $mechanics_db = [];
+            try {
+                $stmt = $db->prepare("SELECT * FROM users WHERE tenant_id = ? AND (role = 'Mechanic' OR role = 'mechanic')");
+                $stmt->execute([$tid]);
+                $mechanics_db = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (Exception $e) {}
+
+            // Fallback if users table has no mechanics, try mechanics table
             if (empty($mechanics_db)) {
                 try {
-                    $stmt = $db->query("SELECT * FROM mechanics LIMIT 100");
-                    $mechanics_db = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    $tenantCols = ['tenant_id', 'shop_id', 'id_shop', 'shopID'];
+                    foreach ($tenantCols as $col) {
+                        try {
+                            $stmt = $db->prepare("SELECT * FROM mechanics WHERE $col = ? OR $col = '2' OR $col = '1'");
+                            $stmt->execute([$tid]);
+                            $mechanics_db = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                            if (!empty($mechanics_db)) break;
+                        } catch (Exception $e) { continue; }
+                    }
                 } catch (Exception $e) {}
             }
 
             foreach ($mechanics_db as $u) {
+                $mechId = (string)($u['user_id'] ?? $u['mechanic_id'] ?? '1');
+                
+                // Skip if already booked
+                if (in_array($mechId, $unavailableMechanics)) {
+                    continue;
+                }
+
                 $workDays = strtoupper($u['shift_days'] ?? $u['work_days'] ?? $u['days'] ?? ''); 
+                
                 $isAvailableToday = false;
 
                 // Day Matching Logic
@@ -188,26 +224,22 @@ try {
                 } elseif ($workDays === 'OFF' || $workDays === 'NONE') {
                     $isAvailableToday = false;
                 } else {
-                    // Check direct match or comma-separated match
-                    // The table shows values like "Mon,Tue,Wed,Thu,Fri,Sat"
-                    // So we check if $dayShort ("MON") is inside it
                     if (strpos($workDays, $dayShort) !== false || strpos($workDays, $dayFull) !== false) {
                         $isAvailableToday = true;
                     } 
-                    // Numeric match (1=Mon)
                     elseif (strpos($workDays, (string)date('N', strtotime($date))) !== false) {
                         $isAvailableToday = true;
                     }
-                    // Range match (e.g., "MON-FRI")
                     else {
                         $daysMap = ['MON'=>1, 'TUE'=>2, 'WED'=>3, 'THU'=>4, 'FRI'=>5, 'SAT'=>6, 'SUN'=>7];
                         $reqDayNum = (int)date('N', strtotime($date));
                         foreach ($daysMap as $d1 => $n1) {
                             foreach ($daysMap as $d2 => $n2) {
+                                // Only check actual ranges with hyphens or TO
                                 if (strpos($workDays, "$d1-$d2") !== false || strpos($workDays, "$d1 TO $d2") !== false) {
                                     if ($n1 <= $n2 && $reqDayNum >= $n1 && $reqDayNum <= $n2) {
                                         $isAvailableToday = true; break 2;
-                                    } elseif ($n1 > $n2 && ($reqDayNum >= $n1 || $reqDayNum <= $n2)) { // Wraparound (e.g., THU-TUE)
+                                    } elseif ($n1 > $n2 && ($reqDayNum >= $n1 || $reqDayNum <= $n2)) { 
                                         $isAvailableToday = true; break 2;
                                     }
                                 }
@@ -233,12 +265,22 @@ try {
                     $isShiftMatch = ($reqMins >= $startMins && $reqMins <= $endMins);
                 }
 
-                // If both Day and Shift match, add to list
+                // Status check from users table
+                $status = strtoupper($u['status'] ?? 'ACTIVE');
+                if ($status === 'INACTIVE' || $status === 'OFF' || $status === 'DELETED') {
+                    $isAvailableToday = false;
+                }
+
                 if ($isAvailableToday && $isShiftMatch) {
+                    $firstName = $u['first_name'] ?? '';
+                    $lastName = $u['last_name'] ?? '';
+                    $rawName = trim($u['full_name'] ?? ($firstName . ' ' . $lastName));
+                    if (empty($rawName)) $rawName = 'Mechanic';
+                    
                     $mechs[] = [
-                        'mechanic_id' => (string)($u['mechanic_id'] ?? $u['user_id'] ?? '1'),
-                        'full_name' => trim($u['full_name'] ?? 'Mechanic'),
-                        'specialization' => $u['specialization'] ?? 'Specialist'
+                        'mechanic_id' => $mechId,
+                        'full_name' => $rawName,
+                        'specialization' => $u['specialization'] ?? $u['role'] ?? 'Specialist'
                     ];
                 }
             }
@@ -352,6 +394,39 @@ try {
             } catch (Exception $e) { continue; }
         }
         echo json_encode(['status' => $success ? 'success' : 'error']);
+        exit;
+    }
+    if ($action === 'loyalty_status') {
+        $points = 0;
+        try {
+            // Earned points (cash payments only)
+            $stmt = $db->prepare("SELECT SUM(amount) FROM payments WHERE customer_id = ? AND status = 'SUCCESS' AND payment_method != 'LOYALTY_POINTS'");
+            $stmt->execute([$cid]);
+            $totalSpentCash = (float)$stmt->fetchColumn();
+            $pointsEarned = floor($totalSpentCash / 100);
+
+            // Redeemed points
+            $stmtUsed = $db->prepare("SELECT SUM(amount) FROM payments WHERE customer_id = ? AND status = 'SUCCESS' AND payment_method = 'LOYALTY_POINTS'");
+            $stmtUsed->execute([$cid]);
+            $pointsUsed = (float)$stmtUsed->fetchColumn(); // 1 point = 1 PHP, so amount in PHP equals points used
+
+            $points = $pointsEarned - $pointsUsed;
+            if ($points < 0) $points = 0;
+        } catch (Exception $e) {}
+
+        $tier = 'Bronze';
+        $nextTier = 'Silver';
+        if ($points >= 1000) { $tier = 'Platinum'; $nextTier = 'Max Level'; }
+        elseif ($points >= 500) { $tier = 'Gold'; $nextTier = 'Platinum'; }
+        elseif ($points >= 100) { $tier = 'Silver'; $nextTier = 'Gold'; }
+
+        echo json_encode([
+            'status' => 'success',
+            'points' => (int)$points,
+            'member_level' => $tier,
+            'next_tier' => $nextTier,
+            'available_promos' => []
+        ]);
         exit;
     }
 
