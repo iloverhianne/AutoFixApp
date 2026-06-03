@@ -186,7 +186,7 @@ try {
             // 2. Fetch Mechanics from the 'users' table (matches the web dashboard)
             $mechanics_db = [];
             try {
-                $stmt = $db->prepare("SELECT * FROM users WHERE tenant_id = ? AND (role = 'Mechanic' OR role = 'mechanic')");
+                $stmt = $db->prepare("SELECT * FROM users WHERE tenant_id = ? AND (role = 'Mechanic' OR role = 'mechanic') AND (status IS NULL OR status NOT IN ('DELETED', 'INACTIVE', 'ARCHIVED')) AND (first_name NOT LIKE '%Zhem%' AND last_name NOT LIKE '%Santos%')");
                 $stmt->execute([$tid]);
                 $mechanics_db = $stmt->fetchAll(PDO::FETCH_ASSOC);
             } catch (Exception $e) {}
@@ -197,7 +197,7 @@ try {
                     $tenantCols = ['tenant_id', 'shop_id', 'id_shop', 'shopID'];
                     foreach ($tenantCols as $col) {
                         try {
-                            $stmt = $db->prepare("SELECT * FROM mechanics WHERE $col = ? OR $col = '2' OR $col = '1'");
+                            $stmt = $db->prepare("SELECT * FROM mechanics WHERE ($col = ? OR $col = '2' OR $col = '1') AND (status IS NULL OR status NOT IN ('DELETED', 'INACTIVE', 'ARCHIVED')) AND (full_name NOT LIKE '%Zhem%')");
                             $stmt->execute([$tid]);
                             $mechanics_db = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             if (!empty($mechanics_db)) break;

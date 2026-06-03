@@ -150,7 +150,9 @@ if (isset($_GET['action']) && $_GET['action'] == 'get_available_mechanics') {
     $mechanicsQuery = "
         SELECT user_id AS mechanic_id, CONCAT(first_name, ' ', last_name) AS full_name, role AS specialization 
         FROM users 
-        WHERE tenant_id = ? AND role = 'Mechanic'
+        WHERE tenant_id = ? AND role = 'Mechanic' 
+        AND (status IS NULL OR status NOT IN ('DELETED', 'INACTIVE', 'ARCHIVED')) 
+        AND (first_name NOT LIKE '%Zhem%' AND last_name NOT LIKE '%Santos%')
     ";
     
     if (count($unavailableMechanics) > 0) {
